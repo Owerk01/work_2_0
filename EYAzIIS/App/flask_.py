@@ -18,7 +18,7 @@ def index():
     return render_template('index.html')
 
 
-@app.route('/parse', methods=['POST'])
+@app.route('/parse/', methods=['POST'])
 def parse():
     input_ = request.form.get('text', '').strip()
     file = request.files.get('file')
@@ -58,7 +58,7 @@ def parse():
     return redirect(url_for('browse'))
 
 
-@app.route('/browse', methods=['GET', 'POST'])
+@app.route('/browse/', methods=['GET', 'POST'])
 def browse():
     helper = SQLhelper()
     data = []
@@ -80,7 +80,7 @@ def browse():
     return render_template('browse.html', data=data)
 
 
-@app.route('/add', methods=['GET', 'POST'])
+@app.route('/add/', methods=['GET', 'POST'])
 def add():
     helper = SQLhelper()
     if request.method == 'POST':
@@ -103,7 +103,7 @@ def add():
     return render_template('edit.html', entry=None)
 
 
-@app.route('/edit/<int:id>', methods=['GET', 'POST'])
+@app.route('/edit/<int:id>/', methods=['GET', 'POST'])
 def edit(id):
     helper = SQLhelper()
 
@@ -138,7 +138,7 @@ def edit(id):
     return render_template('edit.html', entry=entry)
 
 
-@app.route('/delete/<int:id>')
+@app.route('/delete/<int:id>/')
 def delete(id):
     helper = SQLhelper()
     try:
@@ -148,6 +148,9 @@ def delete(id):
         flash(f"Ошибка удаления: {e}", "error")
     return redirect(url_for('browse'))
 
+@app.route('/help/')
+def help():
+    return render_template('help.html')
 
 if __name__ == '__main__':
     app.run(debug=True)
