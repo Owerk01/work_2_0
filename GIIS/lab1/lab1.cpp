@@ -15,7 +15,7 @@ std::vector<std::pair<int, int>> CDA(int x1, int y1, int x2, int y2)
     vector<pair<int, int>> points;
     int dx = x2 - x1;
     int dy = y2 - y1;
-    int steps = std::max(abs(dx), abs(dy));
+    int steps = max(abs(dx), abs(dy));
 
     if (steps == 0) 
     {
@@ -35,6 +35,12 @@ std::vector<std::pair<int, int>> CDA(int x1, int y1, int x2, int y2)
     }
 
     points.back() = {x2, y2};
+
+    cout << "Points of CDA:\n";
+    for (auto pair: points)
+    {
+        cout << "(" << pair.first << ", " << pair.second << ")\n";
+    }
 
     return points;
 }
@@ -75,6 +81,12 @@ std::vector<std::pair<int, int>> Bresenham(int x1, int y1, int x2, int y2)
             y += sy;
             err += dx;
         }
+    }
+
+    cout << "\nPoints of Brezenham:\n";
+    for (auto pair: points)
+    {
+        cout << "(" << pair.first << ", " << pair.second << ")\n";
     }
 
     return points;
@@ -142,6 +154,12 @@ std::vector<std::tuple<int, int, double>> Wu(int x1, int y1, int x2, int y2)
 
     points.back() = {x2, y2, 1};
 
+    cout << "\nPoints of Wu:\n";
+    for (auto trio: points)
+    {
+        cout << "(" << get<0>(trio) << ", " << get<1>(trio) << ", " << get<2>(trio) << ")\n";
+    } 
+
     return points;
 }
 
@@ -153,24 +171,7 @@ int main()
     int x2 = 8;
     int y2 = 6;
     
-    auto points_cda = CDA(x1, y1, x2, y2);
-    cout << "Points of cda:\n";
-    for (auto pair: points_cda)
-    {
-        cout << "(" << pair.first << ", " << pair.second << ")\n";
-    }
-
-    auto points_brzhm = Bresenham(x1, y1, x2, y2);
-    cout << "Points of Brezenham:\n";
-    for (auto pair: points_brzhm)
-    {
-        cout << "(" << pair.first << ", " << pair.second << ")\n";
-    }
-
-    auto points_wu = Wu(x1, y1, x2, y2);
-    cout << "Points of Wu:\n";
-    for (auto trio: points_wu)
-    {
-        cout << "(" << get<0>(trio) << ", " << get<1>(trio) << ", " << get<2>(trio) << ")\n";
-    }    
+    CDA(x1, y1, x2, y2);
+    Bresenham(x1, y1, x2, y2);
+    Wu(x1, y1, x2, y2);  
 }
