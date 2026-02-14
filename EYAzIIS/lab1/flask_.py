@@ -3,7 +3,8 @@ from flask import Flask, request, render_template, redirect, url_for, flash
 from processor import Parser, SQLhelper
 from striprtf.striprtf import rtf_to_text
 
-UPLOAD_FOLDER = 'uploads'
+BASE_DIR = os.path.dirname(__file__)
+UPLOAD_FOLDER = os.path.join(BASE_DIR, 'uploads')
 
 if not os.path.exists(UPLOAD_FOLDER):
     os.mkdir(UPLOAD_FOLDER)

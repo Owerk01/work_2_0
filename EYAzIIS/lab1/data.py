@@ -1,18 +1,18 @@
 import sqlite3 as sql
 import os
 
-DIR = "DB"
-DATABASE = "mydb.db"
-PATH = DIR + "/"+ DATABASE
+BASE_DIR = os.path.dirname(__file__)
+DB_DIR = os.path.join(BASE_DIR, "DB")
+DATABASE = os.path.join(DB_DIR, "mydb.db")
 DB_NAME = "vocabulary"
 
-if not os.path.exists(DIR):
-    os.mkdir(DIR)
-    print(f"(?) Created folder {DIR}/")
+if not os.path.exists(DB_DIR):
+    os.mkdir(DB_DIR)
+    print(f"(?) Created folder {DB_DIR}/")
 
 class DB:
     def __init__(self) -> None:
-        self.conn = sql.connect(PATH)
+        self.conn = sql.connect(DATABASE)
         self.crs = self.conn.cursor()
         self.crs.execute(
             f"""
