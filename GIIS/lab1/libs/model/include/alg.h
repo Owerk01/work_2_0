@@ -21,3 +21,16 @@ private:
   std::vector<Point> points;
   int step_i;
 };
+
+class SecondRankLineAlgHandler : public AlgHandler {
+
+public:
+  SecondRankLineAlgHandler(Canvas *canvas);
+  ~SecondRankLineAlgHandler() override;
+  virtual bool step() override;
+
+private:
+  Canvas *canvas;
+  std::vector<Point> points;
+  int step_i;
+};
