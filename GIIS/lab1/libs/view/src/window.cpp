@@ -1,6 +1,6 @@
 #include "window.h"
-#include "alg.h"
 #include "canvas.h"
+#include "data_handler.h"
 #include "debugger.h"
 #include "vars.h"
 #include <QAction>
@@ -15,7 +15,6 @@
 #include <QToolBar>
 #include <QToolButton>
 #include <QWidget>
-#include <qtoolbutton.h>
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
   setWindowTitle("Editor");
@@ -24,8 +23,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
   setMaximumHeight(MAX_WINDOW_HEIGHT);
   setMinimumWidth(MIN_WINDOW_WIDTH);
   setMinimumHeight(MIN_WINDOW_HEIGHT);
-
-  this->debugger = new Debugger();
 
   // Init working area
   // The very "parent" widget
@@ -51,6 +48,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
   frame_layout->addWidget(scroll_area);
 
   main_view->addWidget(border_frame);
+
+  this->debugger = new Debugger(canvas);
 
   // Init menu bar
   QMenu *file_menu = menuBar()->addMenu("Info");
@@ -81,10 +80,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
   QToolBar *tool_bar = addToolBar("Tools");
   tool_bar->addSeparator();
 
-  QToolButton *draw_line_btn = new QToolButton(tool_bar);
-  draw_line_btn->setText("Draw line");
-  draw_line_btn->setToolTip("Various line drawing algorithms");
-  draw_line_btn->setMaximumWidth(4 * CELL);
+  QToolButton *frl_btn = new QToolButton(tool_bar);
+  frl_btn->setText("FRLine");
+  frl_btn->setToolTip("Various first rank line drawing algorithms");
+  frl_btn->setMaximumWidth(4 * CELL);
 
   QToolButton *clear_canvas_btn = new QToolButton(tool_bar);
   clear_canvas_btn->setText("Clear");
@@ -104,10 +103,34 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
   debug_stop_btn->setText("x");
   debug_stop_btn->setEnabled(false);
 
-  tool_bar->addWidget(draw_line_btn);
-  connect(draw_line_btn, &QToolButton::clicked, this, [this, canvas]() {
-    AlgHandler *alg = new LineAlgHandler(canvas);
-    this->debugger->set_alg(alg);
+  // button with popup, goddamn
+  QToolButton *srl_btn = new QToolButton(tool_bar);
+  srl_btn->setText("SRLine");
+  srl_btn->setToolTip("Various second rank line drawing algorithms");
+  srl_btn->setMaximumWidth(4 * CELL);
+
+  QMenu *srl_menu = new QMenu(srl_btn);
+  srl_menu->addAction("Circle")->setData(0);
+  srl_menu->addAction("Elipsis")->setData(1);
+  srl_menu->addAction("Parabola")->setData(2);
+  srl_menu->addAction("Hyperbola")->setData(3);
+
+  srl_btn->setMenu(srl_menu);
+  srl_btn->setPopupMode(QToolButton::InstantPopup);
+  //
+
+  tool_bar->addWidget(frl_btn);
+  connect(frl_btn, &QToolButton::clicked, this, [this, canvas]() {
+    FRLDataHandler frld;
+    this->debugger->set_points(frld.get_points());
+    this->debugger->begin_debug();
+  });
+
+  tool_bar->addWidget(srl_btn);
+  connect(srl_menu, &QMenu::triggered, this, [this](QAction *act) {
+    int id = act->data().toInt();
+    SRLDataHandler srld(id);
+    this->debugger->set_points(srld.get_points());
     this->debugger->begin_debug();
   });
 
@@ -155,7 +178,7 @@ void MainWindow::on_info() {
                            "Awesome Editor created by Owerk and Glentas (and "
                            "Qwen)\n"
                            "C++ and Qt6.10.2\n"
-                           "Version 1.0\n"
+                           "Version 1.1\n"
                            "2026");
 }
 

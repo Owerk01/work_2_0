@@ -23,9 +23,11 @@ DynamicDialogue::DynamicDialogue(QWidget *parent, std::string name,
     this->spin_boxes[e]->setValue(0);
   }
 
-  this->combo_box = new QComboBox(this);
-  for (auto e : combo_box_options) {
-    this->combo_box->addItem(QString::fromStdString(e));
+  if (combo_box_name != "") {
+    this->combo_box = new QComboBox(this);
+    for (auto e : combo_box_options) {
+      this->combo_box->addItem(QString::fromStdString(e));
+    }
   }
 
   QFormLayout *layout = new QFormLayout(this);
@@ -34,7 +36,9 @@ DynamicDialogue::DynamicDialogue(QWidget *parent, std::string name,
     layout->addRow(QString::fromStdString(e.first), e.second);
   }
 
-  layout->addRow(QString::fromStdString(combo_box_name), this->combo_box);
+  if (combo_box_name != "") {
+    layout->addRow(QString::fromStdString(combo_box_name), this->combo_box);
+  }
 
   QDialogButtonBox *btn_box = new QDialogButtonBox(
       QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
