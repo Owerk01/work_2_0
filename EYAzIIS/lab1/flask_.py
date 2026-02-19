@@ -28,7 +28,7 @@ def parse():
 
     if input_:
         text = input_
-    if file:
+    elif file and file.filename != '':
         if not file.filename.endswith(('.txt', '.rtf')):
             flash("Работа осуществляется только с файлами форматов .txt и .rtf!", "error")
             return redirect(url_for('index'))
@@ -41,11 +41,11 @@ def parse():
             elif file.filename.endswith('.rtf'):
                 with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
                     rtf_content = f.read()
-                text += " " + rtf_to_text(rtf_content)
+                text = rtf_to_text(rtf_content)
         except Exception as e:
             flash(f"Ошибка чтения файла: {e}", "error")
             return redirect(url_for('index'))
-    if text == "":
+    else:
         flash("Не был введён текст и не был прикреплён файл!", "error")
         return redirect(url_for('index'))
 
@@ -54,10 +54,15 @@ def parse():
         return redirect(url_for('index'))
 
     parser = Parser()
-    parser.parse(text)
-    flash("Текст успешно обработан и добавлен в словарь!", "success")
+    word_count, duration = parser.parse(text)  
+    flash(f"Текст успешно обработан! Слов: {word_count}, время: {duration:.3f} сек.", "success")
     return redirect(url_for('browse'))
 
+@app.route('/stats/')
+def stats():
+    helper = SQLhelper()
+    stats_data = helper.get_all_stats() 
+    return render_template('stats.html', stats=stats_data)
 
 @app.route('/browse/', methods=['GET', 'POST'])
 def browse():

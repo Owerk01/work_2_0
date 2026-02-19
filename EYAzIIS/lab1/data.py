@@ -35,6 +35,15 @@ class DB:
             CREATE UNIQUE INDEX IF NOT EXISTS idx_all_unique ON {DB_NAME} (lemma, form, part_of_speech, role);
             """
             )
+
+        self.crs.execute("""
+            CREATE TABLE IF NOT EXISTS parsing_stats (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                word_count INTEGER NOT NULL,
+                duration REAL NOT NULL,
+                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+            );
+            """)
     
     def __del__(self)-> None:
         if self.conn:

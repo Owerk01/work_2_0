@@ -1,4 +1,5 @@
 import spacy
+import time
 from data import DB, DB_NAME
 
 # Тут можешь его расширять
@@ -62,6 +63,14 @@ class SQLhelper:
     def delete(self, id:int)->None:
         self.db.execute_query(f"DELETE FROM {DB_NAME} WHERE id = ?", (id,))
 
+    def save_parsing_stat(self, word_count: int, duration: float) -> None:
+        self.db.execute_query(
+            "INSERT INTO parsing_stats (word_count, duration) VALUES (?, ?)",
+            (word_count, duration)
+        )
+
+    def get_all_stats(self) -> list[tuple]:
+        return self.db.select_query("SELECT word_count, duration, timestamp FROM parsing_stats ORDER BY timestamp")
 
 class Parser:
 
@@ -143,12 +152,13 @@ class Parser:
         }
         return dep_map.get(dep_.lower(), f"Неизвестно ({dep_})")
 
-    def parse(self, text:str) -> None:
+    def parse(self, text: str) -> tuple[int, float]:
         if not text.strip():
-            return
+            return 0, 0.0
 
+        start_time = time.time()
         doc = self.nlp(text)
-        records:list[tuple] = []
+        records: list[tuple] = []
 
         for token in doc:
             if (
@@ -179,8 +189,15 @@ class Parser:
 
             records.append((lemma, form, pos, role))
 
+        word_count = len(records)
         if records:
             self.sql.insert_records(records)
+
+        duration = time.time() - start_time
+        # Сохраняем статистику
+        self.sql.save_parsing_stat(word_count, duration)
+
+        return word_count, duration
 
 # tests = "These are my super tests, I guess. Let's check it out! Words are: run, running, ran."
 # Использование:
