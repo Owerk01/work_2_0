@@ -1,3 +1,4 @@
+#Launch this inside "lab1" folder
 ```bash
 python3 -m venv venv
 source venv/bin/activate
