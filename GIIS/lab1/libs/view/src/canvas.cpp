@@ -8,6 +8,7 @@
 #include <QString>
 #include <QWidget>
 #include <iostream>
+#include <qnamespace.h>
 #include <vector>
 Canvas::Canvas(QWidget *parent, bool is_grid, int pixel_size)
     : QWidget(parent), show_grid(is_grid), px_size(pixel_size), pixels({}) {
@@ -43,17 +44,31 @@ void Canvas::paintEvent(QPaintEvent *) {
   p.fillRect(this->rect(), Qt::white);
 
   QPen pen(Qt::lightGray, 1, Qt::SolidLine);
+  QPen pen2(Qt::black, 1, Qt::SolidLine);
   p.setPen(pen);
 
   if (this->px_size > 1 && this->show_grid == true) {
     int step = this->px_size;
 
     for (int x = 0; x <= this->width(); x += step) {
-      p.drawLine(x, 0, x, this->height());
+
+      if (x % (10 * step) == 0) {
+        p.setPen(pen2);
+        p.drawLine(x, 0, x, this->height());
+        p.setPen(pen);
+      } else {
+        p.drawLine(x, 0, x, this->height());
+      }
     }
 
     for (int y = 0; y <= this->height(); y += step) {
-      p.drawLine(0, y, this->width(), y);
+      if (y % (10 * step) == 0) {
+        p.setPen(pen2);
+        p.drawLine(0, y, this->width(), y);
+        p.setPen(pen);
+      } else {
+        p.drawLine(0, y, this->width(), y);
+      }
     }
   }
 

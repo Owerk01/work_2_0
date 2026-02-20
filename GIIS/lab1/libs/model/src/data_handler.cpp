@@ -70,20 +70,22 @@ SRLDataHandler::SRLDataHandler(int type) {
     break;
   }
   case 2: {
-    DynamicDialogue dia(nullptr, "Parabola dialogue", {"p", "y_max"});
+    DynamicDialogue dia(nullptr, "Parabola dialogue", {"p", "x", "y"});
     dia.exec();
     int p = dia.get_spin_by_name("p");
-    int y_max = dia.get_spin_by_name("y_max");
-    pts = drawParabola(p, y_max);
+    int x = dia.get_spin_by_name("x");
+    int y = dia.get_spin_by_name("y");
+    pts = draw_parabola(x, y, p);
     break;
   }
   case 3: {
-    DynamicDialogue dia(nullptr, "Hyperbola dialogue", {"a", "b", "x_max"});
+    DynamicDialogue dia(nullptr, "Hyperbola dialogue", {"a", "b", "x", "y"});
     dia.exec();
     int a = dia.get_spin_by_name("a");
     int b = dia.get_spin_by_name("b");
-    int x_max = dia.get_spin_by_name("x_max");
-    pts = drawHyperbola(a, b, x_max);
+    int x = dia.get_spin_by_name("x");
+    int y = dia.get_spin_by_name("y");
+    pts = draw_hyperbola(x, y, a, b);
     break;
   }
   }
