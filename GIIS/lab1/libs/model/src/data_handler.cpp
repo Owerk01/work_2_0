@@ -1,6 +1,7 @@
 #include "data_handler.h"
 #include "curved_lines_draw_algs.h"
 #include "dynamic_dia.h"
+#include "funcs.h"
 #include "line_drawing_algs.h"
 #include "vars.h"
 #include <iostream>
@@ -94,3 +95,40 @@ SRLDataHandler::SRLDataHandler(int type) {
   }
 }
 SRLDataHandler::~SRLDataHandler() { std::cout << "SRLine handler out...\n"; }
+
+ARDataHandler::ARDataHandler(int type) {
+  std::vector<std::tuple<int, int, double>> pts = {};
+
+  switch (type) {
+  case 0: {
+    DynamicDialogue dia(nullptr, "Hermit dialogue", {}, "", {},
+                        {"P1", "Force1", "P2", "Force2"});
+    dia.exec();
+    pts =
+        drawHermite(dia.get_line_by_name("P1"), dia.get_line_by_name("Force1"),
+                    dia.get_line_by_name("P2"), dia.get_line_by_name("Force2"));
+    break;
+  }
+  case 1: {
+    DynamicDialogue dia(nullptr, "Bezier dialogue", {}, "", {},
+                        {"P1", "P2", "P3", "P4"});
+    dia.exec();
+    pts = drawBezier(dia.get_line_by_name("P1"), dia.get_line_by_name("P2"),
+                     dia.get_line_by_name("P3"), dia.get_line_by_name("P4"));
+
+    break;
+  }
+  case 2: {
+    DynamicDialogue dia(nullptr, "Bezier dialogue", {}, "", {}, {"Points"},
+                        false);
+    dia.exec();
+    pts = drawBSpline(dia.get_lines());
+    break;
+  }
+  }
+
+  for (auto [x, y, c] : pts) {
+    this->points.push_back({x, y, int(255 * c)});
+  }
+}
+ARDataHandler::~ARDataHandler() { std::cout << "ARLine handler out...\n"; }

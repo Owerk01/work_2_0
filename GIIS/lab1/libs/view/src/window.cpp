@@ -119,6 +119,21 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
   srl_btn->setPopupMode(QToolButton::InstantPopup);
   //
 
+  // button with popup, goddamn x2
+  QToolButton *arl_btn = new QToolButton(tool_bar);
+  arl_btn->setText("ARLine");
+  arl_btn->setToolTip("Various interpolation algorithms");
+  arl_btn->setMaximumWidth(4 * CELL);
+
+  QMenu *arl_menu = new QMenu(arl_btn);
+  arl_menu->addAction("Hermite")->setData(0);
+  arl_menu->addAction("Bezier")->setData(1);
+  arl_menu->addAction("BSpline")->setData(2);
+
+  arl_btn->setMenu(arl_menu);
+  arl_btn->setPopupMode(QToolButton::InstantPopup);
+  //
+
   tool_bar->addWidget(frl_btn);
   connect(frl_btn, &QToolButton::clicked, this, [this, canvas]() {
     FRLDataHandler frld;
@@ -131,6 +146,14 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
     int id = act->data().toInt();
     SRLDataHandler srld(id);
     this->debugger->set_points(srld.get_points());
+    this->debugger->begin_debug();
+  });
+
+  tool_bar->addWidget(arl_btn);
+  connect(arl_menu, &QMenu::triggered, this, [this](QAction *act) {
+    int id = act->data().toInt();
+    ARDataHandler arld(id);
+    this->debugger->set_points(arld.get_points());
     this->debugger->begin_debug();
   });
 

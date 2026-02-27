@@ -16,7 +16,7 @@ std::vector<std::tuple<int, int, double>> draw_circle(int R, int c_x, int c_y) {
   }
 
   double lambda = 0;
-
+ 
   int x = 0;
   int y = R;
   double err = 2.0 - 2.0 * R;

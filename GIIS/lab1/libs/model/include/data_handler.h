@@ -2,7 +2,6 @@
 #include "vars.h"
 #include <vector>
 
-// idk why I need dynamic polymorphism here
 class DataHandler {
 public:
   DataHandler();
@@ -27,4 +26,12 @@ class SRLDataHandler : public DataHandler {
 public:
   SRLDataHandler(int type);
   ~SRLDataHandler();
+};
+
+// any rank line data handler (spline, interpolation)
+class ARDataHandler : public DataHandler {
+
+public:
+  ARDataHandler(int type);
+  ~ARDataHandler();
 };
