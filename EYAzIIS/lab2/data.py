@@ -7,12 +7,12 @@ DATABASE = os.path.join(DB_DIR, "mydb.db")
 DB_NAME = "vocabulary"
 CORPUS_DB_NAME = "corpus"
 
-if not os.path.exists(DB_DIR):
-    os.mkdir(DB_DIR)
-    print(f"(?) Created folder {DB_DIR}/")
-
 class DB:
     def __init__(self) -> None:
+        if not os.path.exists(DB_DIR):
+            os.mkdir(DB_DIR)
+            print(f"(?) Created folder {DB_DIR}/")
+            
         self.conn = sql.connect(DATABASE)
         self.crs = self.conn.cursor()
         self.crs.execute("PRAGMA foreign_keys = ON;")
@@ -20,13 +20,27 @@ class DB:
             f"""
             CREATE TABLE IF NOT EXISTS {CORPUS_DB_NAME} (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            filename VARCHAR(127),
             author VARCHAR(63),
             name VARCHAR(127) NOT NULL,
             year INTEGER CHECK(year BETWEEN 1800 AND 2026),
             source VARCHAR(127),
             genre VARCHAR(63),
-            style VARCHAR(63)
+            style VARCHAR(63),
+            content TEXT NOT NULL UNIQUE
             );
+            """
+            )
+        
+        self.crs.execute(
+            f"""
+            CREATE INDEX IF NOT EXISTS idx_author ON {CORPUS_DB_NAME}(author);
+            """
+            ) 
+
+        self.crs.execute(
+            f"""
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_all_unique_corpus ON {CORPUS_DB_NAME} (author, name, year, source);
             """
             )
         self.crs.execute(
@@ -37,6 +51,7 @@ class DB:
             form VARCHAR(31) NOT NULL,
             part_of_speech VARCHAR(31),
             role VARCHAR(31),
+            frequency INTEGER CHECK(frequency BETWEEN 1 AND 8191),
             FOREIGN KEY (text_id) REFERENCES {CORPUS_DB_NAME}(id) ON DELETE CASCADE 
             );
             """
@@ -48,7 +63,7 @@ class DB:
             ) 
         self.crs.execute(
             f"""
-            CREATE UNIQUE INDEX IF NOT EXISTS idx_all_unique ON {DB_NAME} (lemma, form, part_of_speech, role);
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_all_unique ON {DB_NAME} (lemma, form, part_of_speech, role, text_id);
             """
             )
         self.crs.execute("""

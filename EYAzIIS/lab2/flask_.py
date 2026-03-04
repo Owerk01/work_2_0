@@ -1,6 +1,6 @@
 import os
 from flask import Flask, request, render_template, redirect, url_for, flash
-from processor import Parser, SQLhelper
+from processor import Parser, SQLhelper, CorpusHandler
 from striprtf.striprtf import rtf_to_text
 
 BASE_DIR = os.path.dirname(__file__)
@@ -20,14 +20,22 @@ def index():
 
 
 @app.route('/parse/', methods=['POST'])
-def parse():
+def parse() -> Response:
     input_ = request.form.get('text', '').strip()
     file = request.files.get('file')
 
-    text = ""
+    # Тут придется поебаться с меню, нужно заполнять форму
+    filename = "" 
+    author = "" 
+    name = "" 
+    year = 0 
+    source = "" 
+    genre = "" 
+    style = "" 
+    content = ""
 
     if input_:
-        text = input_
+        content = input_
     elif file and file.filename != '':
         if not file.filename.endswith(('.txt', '.rtf')):
             flash("Работа осуществляется только с файлами форматов .txt и .rtf!", "error")
@@ -37,11 +45,11 @@ def parse():
         try:
             if file.filename.endswith('.txt'):
                 with open(filepath, 'r', encoding='utf-8') as f:
-                    text = f.read()
+                    content = f.read()
             elif file.filename.endswith('.rtf'):
                 with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
                     rtf_content = f.read()
-                text = rtf_to_text(rtf_content)
+                content = rtf_to_text(rtf_content)
         except Exception as e:
             flash(f"Ошибка чтения файла: {e}", "error")
             return redirect(url_for('index'))
@@ -49,21 +57,24 @@ def parse():
         flash("Не был введён текст и не был прикреплён файл!", "error")
         return redirect(url_for('index'))
 
-    if not text.strip():
+    if not content.strip():
         flash("Прикреплённый файл не содержит текст!", "error")
         return redirect(url_for('index'))
 
-    parser = Parser()
-    word_count, duration = parser.parse(text)  
+    # TODO: фиксим под новую модель
+    corpus = CorpusHandler()
+    word_count, duration = corpus.add_text_to_corpus(filename, author, name, year, source, genre, style, content)  
     flash(f"Текст успешно обработан! Слов: {word_count}, время: {duration:.3f} сек.", "success")
     return redirect(url_for('browse'))
 
+# Тут все ок
 @app.route('/stats/')
 def stats():
     helper = SQLhelper()
     stats_data = helper.get_all_stats() 
     return render_template('stats.html', stats=stats_data)
 
+# Вроде ок
 @app.route('/browse/', methods=['GET', 'POST'])
 def browse():
     helper = SQLhelper()
@@ -85,7 +96,11 @@ def browse():
 
     return render_template('browse.html', data=data)
 
-
+# Тут конечно сложно... frequency надо просто костылить =1, Предлагать еблану выбрать текст, к которому будет принадлежать слово...ArithmeticError
+# Но наверно это лучше убрать, нельзя добавлять новые, можно только фиксить существующие
+# Типа идея в том что у нас текст содержит слова и они связаны с текстом железно
+# Поэтому можно только изменять слова, а удаление и добавление можно менять ТОЛЬКО при изменении исходного текста
+# то есть хотим добавить слово -> оно должно появиться в тексте
 @app.route('/add/', methods=['GET', 'POST'])
 def add():
     helper = SQLhelper()
@@ -108,7 +123,8 @@ def add():
 
     return render_template('edit.html', entry=None)
 
-
+# После изменения костыль frequency = 1
+# Нельзя менять словоформу и лемму, только role и pos (lemma & form меняется при редактировании текста)
 @app.route('/edit/<int:id>/', methods=['GET', 'POST'])
 def edit(id):
     helper = SQLhelper()
@@ -143,7 +159,7 @@ def edit(id):
 
     return render_template('edit.html', entry=entry)
 
-
+# Наверное стоит убрать
 @app.route('/delete/<int:id>/')
 def delete(id):
     helper = SQLhelper()
@@ -157,6 +173,12 @@ def delete(id):
 @app.route('/help/')
 def help():
     return render_template('help.html')
+
+# Страница со списком всех текстов и инфы про них
+# добавить изменение текста (просто заполнять форму как в def parse() выше)
+# подтягиваешь данные в форму, предлагаешь изменить бла бла затем:
+# corpus = CorpusHandler()
+# corpus.edit_corp_text(...)
 
 if __name__ == '__main__':
     app.run(debug=True)

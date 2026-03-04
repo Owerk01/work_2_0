@@ -1,6 +1,7 @@
 import spacy
 import time
-from data import DB, DB_NAME
+from data import DB, DB_NAME, CORPUS_DB_NAME
+
 
 # Тут можешь его расширять
 class SQLhelper:
@@ -12,7 +13,25 @@ class SQLhelper:
     
     def insert_records(self, values:list[tuple])->None:
         for v in values:
-            self.db.execute_query(f"INSERT OR IGNORE INTO {DB_NAME} (lemma, form, part_of_speech, role) VALUES (?, ?, ?, ?)", v)
+            self.db.execute_query(f"INSERT OR IGNORE INTO {DB_NAME} (lemma, form, part_of_speech, role, frequency, text_id) VALUES (?, ?, ?, ?, ?, ?)", v)
+    
+    def insert_text_for_corpus(self, values:tuple)->None:
+        self.db.execute_query(f"INSERT OR IGNORE INTO {CORPUS_DB_NAME} (filename, author, name, year, source, genre, style, content) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", values)
+
+    def get_last_corpus_id(self, values:tuple)->int:
+        result = self.db.select_query(f"SELECT id FROM {CORPUS_DB_NAME} WHERE author = ? AND name = ? AND year = ? AND source = ?", values)
+        
+        return result[0][0] if result else None
+    
+    def get_corp_text_by_id(self, id: int):
+        result = self.db.select_query(
+            f"SELECT * FROM {CORPUS_DB_NAME} WHERE id = ?",
+            (id,)
+        )
+        return result[0] if result else None
+
+    def delete_corpus_text(self, id:int)->None:
+        self.db.execute_query(f"DELETE FROM {CORPUS_DB_NAME} WHERE id = ?", (id,))
 
     def insert(self, lemma:str, form:str, pos:str, role:str)->None:
         self.db.execute_query(
@@ -152,13 +171,15 @@ class Parser:
         }
         return dep_map.get(dep_.lower(), f"Неизвестно ({dep_})")
 
-    def parse(self, text: str) -> tuple[int, float]:
+    def parse(self, text:str, text_id:int) -> tuple[int, float]:
+
         if not text.strip():
             return 0, 0.0
 
         start_time = time.time()
         doc = self.nlp(text)
         records: list[tuple] = []
+        forms_frequency:dict[tuple,int] = {}
 
         for token in doc:
             if (
@@ -186,11 +207,11 @@ class Parser:
 
             pos = self.get_pos_rus(token.pos_)
             role = self.get_dep_rus(token.dep_)
-
-            records.append((lemma, form, pos, role))
+            forms_frequency[(lemma, form, pos, role)] += 1
+            records.append((lemma, form, pos, role, forms_frequency[(lemma, form, pos, role)], text_id))
 
         word_count = len(records)
-        
+
         if records:
             self.sql.insert_records(records)
 
@@ -200,4 +221,22 @@ class Parser:
         self.sql.save_parsing_stat(word_count, duration)
 
         return word_count, duration
+
+class CorpusHandler:
+    def __init__(self)->None:
+        self.parser = Parser()
+    
+    def add_text_to_corpus(self, filename:str, author:str, name:str, year:int,source:str, genre:str, style:str, content:str)->tuple[int, float]:
+        if self.parser.sql.get_last_corpus_id((author, name, year, source)) == None:
+            self.parser.sql.insert_text_for_corpus((filename, author, name, year, source, genre, style, content))
+            last_id = self.parser.sql.get_last_corpus_id((author, name, year, source))
+            return self.parser.parse(content, last_id)
+
+    def edit_corp_text(self, id:int, filename:str, author:str, name:str, year:int,source:str, genre:str, style:str, content:str)->tuple[int, float]:
+        if self.parser.sql.get_corp_text_by_id(id) != None:
+            self.parser.sql.delete_corpus_text(id)
+            return self.add_text_to_corpus(filename, author, name, year, source, genre, style, content)
+    
+            
+
 
