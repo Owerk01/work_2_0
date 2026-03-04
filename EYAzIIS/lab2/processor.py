@@ -20,7 +20,6 @@ class SQLhelper:
 
     def get_last_corpus_id(self, values:tuple)->int:
         result = self.db.select_query(f"SELECT id FROM {CORPUS_DB_NAME} WHERE author = ? AND name = ? AND year = ? AND source = ?", values)
-        
         return result[0][0] if result else None
     
     def get_corp_text_by_id(self, id: int):
@@ -32,6 +31,72 @@ class SQLhelper:
 
     def delete_corpus_text(self, id:int)->None:
         self.db.execute_query(f"DELETE FROM {CORPUS_DB_NAME} WHERE id = ?", (id,))
+
+    def get_form_count(self, id:int | None = None)->int | None:
+        if id != None:
+            result = self.db.select_query(f"SELECT COALESCE(SUM(frequency),0) FROM {DB_NAME} WHERE text_id = ?",
+            (id,)
+        )
+            return result[0][0] if result else None
+        else:
+            result = self.db.select_query(f"SELECT COALESCE(SUM(frequency),0) FROM {DB_NAME}",())
+            return result[0][0] if result else None
+    
+    def get_unique_count(self, id:int | None = None, field:str = "form")->int | None:
+        if id != None:
+            result = self.db.select_query(f"SELECT COUNT(DISTINCT {field}) FROM {DB_NAME} WHERE text_id = ?",
+            (id,)
+        )
+            return result[0][0] if result else None
+        else:
+            result = self.db.select_query(f"SELECT COUNT(DISTINCT {field}) FROM {DB_NAME}",())
+            return result[0][0] if result else None
+    
+    def get_pos_stats(self, text_id: int | None = None) -> list[tuple[str, int]]:
+        if text_id != None:
+            query = f"""
+                SELECT part_of_speech, COALESCE(SUM(frequency), 0) AS count 
+                FROM {DB_NAME} 
+                WHERE text_id = ? 
+                GROUP BY part_of_speech 
+                ORDER BY count DESC
+            """
+            params = (text_id,)
+        else:
+            query = f"""
+                SELECT part_of_speech, COALESCE(SUM(frequency), 0) AS count 
+                FROM {DB_NAME} 
+                GROUP BY part_of_speech 
+                ORDER BY count DESC
+            """
+            params = ()
+        
+        return self.db.select_query(query, params)
+    
+    def get_top_forms(self, text_id: int | None = None, limit: int = 10) -> list[tuple[str, int]]:
+
+        if text_id is not None:
+            query = f"""
+                SELECT form, SUM(frequency) AS total_freq 
+                FROM {DB_NAME} 
+                WHERE text_id = ? 
+                GROUP BY form 
+                ORDER BY total_freq DESC 
+                LIMIT ?
+            """
+            params = (text_id, limit)
+        else:
+            query = f"""
+                SELECT form, SUM(frequency) AS total_freq 
+                FROM {DB_NAME} 
+                GROUP BY form 
+                ORDER BY total_freq DESC 
+                LIMIT ?
+            """
+            params = (limit,)
+        
+        return self.db.select_query(query, params)
+
 
     def insert(self, lemma:str, form:str, pos:str, role:str)->None:
         self.db.execute_query(
@@ -96,9 +161,7 @@ class Parser:
     def __init__(self) -> None:
         self.nlp = spacy.load("en_core_web_sm")
         self.sql = SQLhelper()
-    
-    def get_pos_rus(self, pos_: str) -> str:
-        pos_map = {
+        self.pos_map = {
             "ADJ": "Прилагательное",
             "ADP": "Предлог",
             "ADV": "Наречие",
@@ -118,11 +181,8 @@ class Parser:
             "X": "Другое",
             "SPACE": "Пробел"
         }
-        return pos_map.get(pos_.upper(), f"Неизвестно ({pos_})")
 
-
-    def get_dep_rus(self, dep_: str) -> str:
-        dep_map = {
+        self.dep_map = {
         "root": "Корень предложения",
         "acl": "Придаточное определительное",
         "acomp": "Придаточное дополнительное (прил.)",
@@ -169,7 +229,13 @@ class Parser:
         "relcl": "Относительное придаточное",
         "xcomp": "Придаточное безличное"
         }
-        return dep_map.get(dep_.lower(), f"Неизвестно ({dep_})")
+    
+    def get_pos_rus(self, pos_: str) -> str:
+        return self.pos_map.get(pos_.upper(), f"Неизвестно ({pos_})")
+
+
+    def get_dep_rus(self, dep_: str) -> str:
+        return self.dep_map.get(dep_.lower(), f"Неизвестно ({dep_})")
 
     def parse(self, text:str, text_id:int) -> tuple[int, float]:
 
@@ -231,11 +297,39 @@ class CorpusHandler:
             self.parser.sql.insert_text_for_corpus((filename, author, name, year, source, genre, style, content))
             last_id = self.parser.sql.get_last_corpus_id((author, name, year, source))
             return self.parser.parse(content, last_id)
+    
+    def delete_corp(self, id:int)->None:
+        if self.parser.sql.get_corp_text_by_id(id) != None:
+            self.parser.sql.delete_corpus_text(id)
 
     def edit_corp_text(self, id:int, filename:str, author:str, name:str, year:int,source:str, genre:str, style:str, content:str)->tuple[int, float]:
         if self.parser.sql.get_corp_text_by_id(id) != None:
             self.parser.sql.delete_corpus_text(id)
             return self.add_text_to_corpus(filename, author, name, year, source, genre, style, content)
+    
+    # you can get stats for specific text ID or for all of them
+    def get_corpus_stats(self, id:int = None) -> dict:
+        stats={}
+        stats["form_count"] = self.parser.sql.get_form_count(id)
+        stats["unique_form_count"] = self.parser.sql.get_unique_count(id, "form")
+        stats["unique_lemma_count"] = self.parser.sql.get_unique_count(id, "lemma")
+        stats["pos_freq"] = self.parser.sql.get_pos_stats(id)
+        stats["top_form"] = self.parser.sql.get_top_forms(id)
+
+        return stats
+    
+    # TODO
+    def concrodance(self, word:str)->dict[str, list[str]]:
+        # Файл: часть предложений с переданным словом в них
+        matches: dict[str, list[str]]= {}
+
+        return matches
+
+
+    
+            
+    
+    
     
             
 
