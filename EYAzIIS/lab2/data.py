@@ -5,6 +5,7 @@ BASE_DIR = os.path.dirname(__file__)
 DB_DIR = os.path.join(BASE_DIR, "DB")
 DATABASE = os.path.join(DB_DIR, "mydb.db")
 DB_NAME = "vocabulary"
+CORPUS_DB_NAME = "corpus"
 
 if not os.path.exists(DB_DIR):
     os.mkdir(DB_DIR)
@@ -14,6 +15,20 @@ class DB:
     def __init__(self) -> None:
         self.conn = sql.connect(DATABASE)
         self.crs = self.conn.cursor()
+        self.crs.execute("PRAGMA foreign_keys = ON;")
+        self.crs.execute(
+            f"""
+            CREATE TABLE IF NOT EXISTS {CORPUS_DB_NAME} (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            author VARCHAR(63),
+            name VARCHAR(127) NOT NULL,
+            year INTEGER CHECK(year BETWEEN 1800 AND 2026),
+            source VARCHAR(127),
+            genre VARCHAR(63),
+            style VARCHAR(63)
+            );
+            """
+            )
         self.crs.execute(
             f"""
             CREATE TABLE IF NOT EXISTS {DB_NAME} (
@@ -21,7 +36,8 @@ class DB:
             lemma VARCHAR(31) NOT NULL,
             form VARCHAR(31) NOT NULL,
             part_of_speech VARCHAR(31),
-            role VARCHAR(31) 
+            role VARCHAR(31),
+            FOREIGN KEY (text_id) REFERENCES {CORPUS_DB_NAME}(id) ON DELETE CASCADE 
             );
             """
             )
@@ -35,7 +51,6 @@ class DB:
             CREATE UNIQUE INDEX IF NOT EXISTS idx_all_unique ON {DB_NAME} (lemma, form, part_of_speech, role);
             """
             )
-
         self.crs.execute("""
             CREATE TABLE IF NOT EXISTS parsing_stats (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,

@@ -190,18 +190,14 @@ class Parser:
             records.append((lemma, form, pos, role))
 
         word_count = len(records)
+        
         if records:
             self.sql.insert_records(records)
 
         duration = time.time() - start_time
+
         # Сохраняем статистику
         self.sql.save_parsing_stat(word_count, duration)
 
         return word_count, duration
-
-# tests = "These are my super tests, I guess. Let's check it out! Words are: run, running, ran."
-# Использование:
-# prs = Parser()
-# prs.parse(tests)
-# print(prs.sql.select_all())
 
