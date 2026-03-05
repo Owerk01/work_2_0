@@ -58,6 +58,5 @@
   "C_Cpp_Runner.msvcSecureNoWarnings": false,
   "C_Cpp.default.compilerPath": "/usr/bin/gcc",
   "cmake.sourceDirectory": "/home/judex/work_2_0/GIIS/lab1/libs/logic",
-  "python-envs.defaultEnvManager": "ms-python.python:venv",
-  "python-envs.pythonProjects": []
+  "python-envs.defaultEnvManager": "ms-python.python:venv"
 }

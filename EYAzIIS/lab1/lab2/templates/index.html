@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Пополнение корпуса</h2>
+<p>Загрузите текст и укажите метаданные для филологической разметки.</p>
+<form method="POST" action="{{ url_for('parse') }}" enctype="multipart/form-data">
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label class="form-label">Текст (вставка):</label>
+            <textarea name="text" class="form-control" rows="6" placeholder="Или загрузите файл ниже..."></textarea>
+        </div>
+        <div class="col-md-6 mb-3">
+            <label class="form-label">Файл (.txt, .rtf, .docx, .pdf):</label>
+            <input type="file" name="file" class="form-control" accept=".txt,.rtf,.docx,.pdf">
+        </div>
+    </div>
+    <hr>
+    <h5>Метаданные текста</h5>
+    <div class="row g-3">
+        <div class="col-md-3"><input type="text" name="author" class="form-control" placeholder="Автор" required></div>
+        <div class="col-md-3"><input type="text" name="name" class="form-control" placeholder="Название текста" required></div>
+        <div class="col-md-2"><input type="number" name="year" class="form-control" placeholder="Год" value="2024"></div>
+        <div class="col-md-4">
+            <select name="subject_area" class="form-select">
+                <option value="General">Общая</option>
+                <option value="Cinema">Кинематограф</option>
+                <option value="Cooking">Кулинария</option>
+                <option value="Medicine">Медицина</option>
+                <option value="IT">IT</option>
+            </select>
+        </div>
+        <div class="col-md-3"><input type="text" name="genre" class="form-control" placeholder="Жанр"></div>
+        <div class="col-md-3"><input type="text" name="style" class="form-control" placeholder="Стиль"></div>
+    </div>
+    <button type="submit" class="btn btn-primary mt-3">Обработать и добавить в корпус</button>
+</form>
+{% endblock %}

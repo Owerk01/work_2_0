@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block content %}
+<h2 class="mb-4">Статистика производительности</h2>
+{% if stats %}
+<p>Всего записей в логе: {{ stats|length }}</p>
+
+<!-- График -->
+<canvas id="perfChart" height="100"></canvas>
+
+<h3 class="mt-4">Таблица данных:</h3>
+<table class="table table-sm table-striped">
+    <thead>
+        <tr>
+            <th>Время</th>
+            <th>Слов</th>
+            <th>Время обработки (сек)</th>
+            <th>Скорость (слов/сек)</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for row in stats %}
+        <tr>
+            <td>{{ row[2] }}</td>
+            <td>{{ row[0] }}</td>
+            <td>{{ "%.3f"|format(row[1]) }}</td>
+            <td>{{ "%.1f"|format(row[0] / row[1] if row[1] > 0 else 0) }}</td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const ctx = document.getElementById('perfChart').getContext('2d');
+    
+    // Безопасное получение данных из Jinja
+    const rawData = {{ stats | tojson }};
+    
+    const labels = rawData.map(row => row[2]); // timestamp
+    const wordCounts = rawData.map(row => row[0]); // count
+    const durations = rawData.map(row => row[1]); // duration
+
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Количество слов',
+                    data: wordCounts,
+                    borderColor: 'blue',
+                    yAxisID: 'y',
+                    tension: 0.1
+                },
+                {
+                    label: 'Время (сек)',
+                    data: durations,
+                    borderColor: 'red',
+                    yAxisID: 'y1',
+                    tension: 0.1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            interaction: {
+                mode: 'index',
+                intersect: false,
+            },
+            scales: {
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                },
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    grid: {
+                        drawOnChartArea: false,
+                    },
+                },
+            }
+        }
+    });
+</script>
+{% else %}
+<div class="alert alert-warning">Нет данных. Загрузите хотя бы один текст!</div>
+{% endif %}
+<a href="{{ url_for('index') }}" class="btn btn-primary mt-3">← Вернуться на главную</a>
+{% endblock %}

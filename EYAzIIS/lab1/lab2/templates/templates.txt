@@ -1,0 +1,333 @@
+base.html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>App</title>
+    <link href="{{url_for("static", filename='css/bootstrap.min.css')}}" rel="stylesheet">
+</head>
+<body>
+<div class="container mt-4">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <nav class="mb-4">
+        <a class="btn btn-outline-primary" href="{{ url_for('index') }}">Главная</a>
+        <a class="btn btn-outline-info" href="{{ url_for('browse') }}">Просмотреть словарь</a>
+        <a class="btn btn-outline-success" href="{{ url_for('add') }}">Добавить запись</a>
+        <a class="btn btn-outline-secondary" href="{{ url_for('help') }}">Помощь</a>
+        <a class="btn btn-outline-dark" href="{{ url_for('stats') }}">Статистика</a>
+    </nav>
+
+    {% block content %}{% endblock %}
+</div>
+
+<script src="{{url_for("static", filename='js/bootstrap.bundle.min.js')}}" rel="stylesheet"></script>
+</body>
+</html>
+---------------
+browse.html
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Словарь лексем</h2>
+
+<form method="POST" class="row g-3 mb-4">
+    <div class="col-md-3">
+        <input type="text" name="lemma" class="form-control" placeholder="Лемма (частичное совпадение)">
+    </div>
+    <div class="col-md-3">
+        <input type="text" name="form" class="form-control" placeholder="Форма">
+    </div>
+    <div class="col-md-2">
+        <input type="text" name="pos" class="form-control" placeholder="Часть речи">
+    </div>
+    <div class="col-md-2">
+        <input type="text" name="role" class="form-control" placeholder="Роль">
+    </div>
+    <div class="col-md-3">
+        <button type="submit" class="btn btn-secondary">Фильтровать</button>
+        <a href="{{ url_for('browse') }}" class="btn btn-outline-secondary ms-2">Сбросить</a>
+    </div>
+</form>
+
+{% if data %}
+<table class="table table-striped table-hover">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Лемма</th>
+            <th>Форма</th>
+            <th>Часть речи</th>
+            <th>Роль</th>
+            <th>Действия</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in data %}
+        <tr>
+            <td>{{ row[0] }}</td>
+            <td>{{ row[1] }}</td>
+            <td>{{ row[2] }}</td>
+            <td>{{ row[3] }}</td>
+            <td>{{ row[4] }}</td>
+            <td>
+                <a href="{{ url_for('edit', id=row[0]) }}" class="btn btn-sm btn-warning">✏️</a>
+                <a href="{{ url_for('delete', id=row[0]) }}" class="btn btn-sm btn-danger" onclick="return confirm('Удалить?')">🗑️</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>Нет данных. Загрузите текст на главной странице!</p>
+{% endif %}
+{% endblock %}
+-------------
+edit.html
+{% extends "base.html" %}
+
+{% block content %}
+<h2>{{ "Редактировать запись" if entry else "Добавить новую запись" }}</h2>
+
+<form method="POST">
+    <input type="hidden" name="id" value="{{ entry[0] if entry else '' }}">
+    <div class="mb-3">
+        <label class="form-label">Лемма *</label>
+        <input type="text" name="lemma" class="form-control" value="{{ entry[1] if entry else '' }}" required>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Форма *</label>
+        <input type="text" name="form" class="form-control" value="{{ entry[2] if entry else '' }}" required>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Часть речи</label>
+        <input type="text" name="pos" class="form-control" value="{{ entry[3] if entry else '' }}">
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Синтаксическая роль</label>
+        <input type="text" name="role" class="form-control" value="{{ entry[4] if entry else '' }}">
+    </div>
+    <button type="submit" class="btn btn-success">Сохранить</button>
+    <a href="{{ url_for('browse') }}" class="btn btn-secondary">Отмена</a>
+</form>
+{% endblock %}
+-----------------
+help.text
+{% extends "base.html" %}
+
+{% block content %}
+<h2 class="mb-4">Руководство пользователя</h2>
+
+<div class="alert alert-info">
+    <strong>Цель системы:</strong> автоматический анализ английского текста с извлечением лексем, их нормальных форм (лемм), частей речи и синтаксических ролей.  
+    Также система собирает статистику производительности для оценки скорости обработки.
+</div>
+
+<h3 class="mt-4">1. Загрузка текста</h3>
+<p>Перейдите на <a href="{{ url_for('index') }}">главную страницу</a> и выберите один из способов:</p>
+<ul>
+    <li><strong>Вставьте текст вручную</strong> в поле «Текст».</li>
+    <li><strong>Загрузите файл</strong> формата <code>.txt</code> или <code>.rtf</code>.</li>
+</ul>
+<p>После нажатия кнопки «Обработать» система:
+    <ul>
+        <li>разобьёт текст на слова,</li>
+        <li>проигнорирует пунктуацию, числа, URL, email и спецсимволы,</li>
+        <li>определит лемму, часть речи и синтаксическую роль для каждого слова,</li>
+        <li>сохранит уникальные записи в словарь,</li>
+        <li><strong>запишет в статистику: количество слов и время обработки</strong>.</li>
+    </ul>
+</p>
+<p>Вы увидите уведомление вида: <em>«Слов: 42, время: 0.152 сек.»</em></p>
+
+<h3 class="mt-4">2. Просмотр и фильтрация словаря</h3>
+<p>На странице <a href="{{ url_for('browse') }}">«Просмотреть словарь»</a> вы увидите таблицу со всеми записями.</p>
+<p>Чтобы найти нужные слова:</p>
+<ul>
+    <li>Введите часть <strong>леммы</strong> (например, <code>run</code> найдёт <em>run, running, ran</em>),</li>
+    <li>или форму (<code>running</code>),</li>
+    <li>или часть речи (<code>Глагол</code>, <code>Существительное</code> и т.д.),</li>
+    <li>или синтаксическую роль (<code>Именное подлежащее</code>, <code>Прямое дополнение</code> и др.).</li>
+</ul>
+<p>Нажмите «Фильтровать» — таблица обновится. Чтобы сбросить фильтр — нажмите «Сбросить».</p>
+
+<h3 class="mt-4">3. Добавление и редактирование записей</h3>
+<ul>
+    <li>Кнопка <a href="{{ url_for('add') }}" class="btn btn-sm btn-outline-success">Добавить запись</a> — создаёт новую запись вручную.</li>
+    <li>В таблице рядом с каждой записью есть кнопка ✏️ — она ведёт на страницу редактирования.</li>
+    <li>Поля <strong>«Лемма»</strong> и <strong>«Форма»</strong> обязательны.</li>
+</ul>
+
+<h3 class="mt-4">4. Удаление записей</h3>
+<p>Нажмите на значок 🗑️ рядом с записью. Появится подтверждение — подтвердите удаление.</p>
+
+<h3 class="mt-4">5. Статистика производительности</h3>
+<p>Перейдите на страницу <a href="{{ url_for('stats') }}">«Статистика»</a>, чтобы увидеть:</p>
+<ul>
+    <li>График зависимости количества слов от времени обработки,</li>
+    <li>Таблицу всех замеров с точным временем и скоростью (слов/сек),</li>
+    <li>Историю всех загрузок текста.</li>
+</ul>
+<p>Это позволяет оценить, насколько быстро работает система при разных объёмах текста.</p>
+
+<hr class="my-5">
+
+<h2 class="mb-4">Основные термины</h2>
+
+<dl class="row">
+  <dt class="col-md-3"><strong>Лексема (lexeme)</strong></dt>
+  <dd class="col-md-9">Абстрактная единица словаря, объединяющая все формы одного слова. Например, лексема <em>run</em> включает формы: <em>run, runs, ran, running</em>.</dd>
+
+  <dt class="col-md-3"><strong>Форма слова (word form)</strong></dt>
+  <dd class="col-md-9">Конкретное написание слова в тексте. Например, в предложении «He is running» форма слова — <em>running</em>.</dd>
+
+  <dt class="col-md-3"><strong>Лемма (lemma)</strong></dt>
+  <dd class="col-md-9">Нормальная (словарная) форма слова. Для глаголов — инфинитив (<em>to run</em> → <em>run</em>), для существительных — именительный падеж единственного числа (<em>cats</em> → <em>cat</em>).</dd>
+
+  <dt class="col-md-3"><strong>Часть речи</strong></dt>
+  <dd class="col-md-9">Грамматическая категория слова. В системе используются <strong>русские названия</strong>:  
+    <code>Существительное</code>, <code>Глагол</code>, <code>Прилагательное</code>, <code>Наречие</code>, <code>Местоимение</code>, <code>Предлог</code> и др.</dd>
+
+  <dt class="col-md-3"><strong>Синтаксическая роль</strong></dt>
+  <dd class="col-md-9">Функция слова в предложении. Примеры:
+    <ul class="mb-0">
+      <li><code>Именное подлежащее</code> — подлежащее</li>
+      <li><code>Прямое дополнение</code> — объект действия</li>
+      <li><code>Корень предложения</code> — главный глагол</li>
+      <li><code>Определение</code> — атрибутивное прилагательное</li>
+      <li><code>Обстоятельство</code> — наречное модификатор</li>
+    </ul>
+  </dd>
+</dl>
+
+<hr class="my-5">
+
+<h3 class="mt-4">6. Технические ограничения</h3>
+<ul>
+    <li>Анализ выполняется только для <strong>английских текстов</strong>.</li>
+    <li>Поддерживаются файлы <code>.txt</code> и <code>.rtf</code>.</li>
+    <li>Слова с цифрами, символами или длиннее 31 символа игнорируются.</li>
+    <li>Дубликаты (по комбинации лемма+форма+часть речи+роль) не сохраняются.</li>
+    <li>Статистика хранится локально и не отправляется на серверы.</li>
+</ul>
+
+<div class="mt-5 p-3 bg-light rounded">
+    <h4>Возникли проблемы?</h4>
+    <p>Убедитесь, что:
+        <ul>
+            <li>текст на английском языке,</li>
+            <li>файл не повреждён,</li>
+            <li>вы заполнили обязательные поля при ручном вводе.</li>
+        </ul>
+    Если ошибка остаётся — обратитесь к разработчику.
+    </p>
+</div>
+
+<a href="{{ url_for('index') }}" class="btn btn-primary mt-3">← Вернуться на главную</a>
+{% endblock %}
+---------------
+index.html
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Загрузка текста</h2>
+<p>Вставьте текст в поле ниже или загрузите .txt или .rtf файл.</p>
+
+<form method="POST" action="{{ url_for('parse') }}" enctype="multipart/form-data">
+    <div class="mb-3">
+        <label class="form-label">Текст:</label>
+        <textarea name="text" class="form-control" rows="6" placeholder="Например: The cat runs quickly..."></textarea>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Или загрузите файл (.txt или .rtf):</label>
+        <input type="file" name="file" class="form-control" accept=".txt,.rtf">
+    </div>
+    <button type="submit" class="btn btn-primary">Обработать</button>
+</form>
+{% endblock %}
+---------------------
+stats.html
+{% extends "base.html" %}
+
+{% block content %}
+<h2 class="mb-4">Статистика производительности</h2>
+
+{% if stats %}
+    <p>Всего записей: {{ stats|length }}</p>
+
+    <!-- График через Chart.js -->
+    <canvas id="perfChart" height="100"></canvas>
+
+    <h3 class="mt-4">Данные:</h3>
+    <table class="table table-sm">
+        <thead>
+            <tr>
+                <th>Время</th>
+                <th>Слов</th>
+                <th>Время обработки (сек)</th>
+                <th>Скорость (слов/сек)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for word_count, duration, ts in stats %}
+            <tr>
+                <td>{{ ts }}</td>
+                <td>{{ word_count }}</td>
+                <td>{{ "%.3f"|format(duration) }}</td>
+                <td>{{ "%.1f"|format(word_count / duration if duration > 0 else 0) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        const ctx = document.getElementById('perfChart').getContext('2d');
+        const labels = {{ stats|map(attribute=2)|list|tojson }};
+        const wordCounts = {{ stats|map(attribute=0)|list|tojson }};
+        const durations = {{ stats|map(attribute=1)|list|tojson }};
+
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels.map(ts => new Date(ts).toLocaleTimeString()),
+                datasets: [
+                    {
+                        label: 'Количество слов',
+                        data: wordCounts,
+                        borderColor: 'blue',
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: 'Время (сек)',
+                        data: durations,
+                        borderColor: 'red',
+                        yAxisID: 'y1'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                interaction: { mode: 'index', intersect: false },
+                scales: {
+                    y: { type: 'linear', display: true, position: 'left' },
+                    y1: { type: 'linear', display: true, position: 'right', grid: { drawOnChartArea: false } }
+                }
+            }
+        });
+    </script>
+{% else %}
+    <p>Нет данных. Загрузите хотя бы один текст!</p>
+{% endif %}
+
+<a href="{{ url_for('index') }}" class="btn btn-primary mt-3">← Вернуться на главную</a>
+{% endblock %}

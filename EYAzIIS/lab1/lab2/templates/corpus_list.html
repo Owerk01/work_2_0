@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Список текстов корпуса</h2>
+<table class="table table-striped">
+    <thead><tr><th>ID</th><th>Название</th><th>Автор</th><th>Год</th><th>Область</th><th>Файл</th></tr></thead>
+    <tbody>
+    {% for t in texts %}
+        <tr>
+            <td>{{ t[0] }}</td>
+            <td>{{ t[1] }}</td>
+            <td>{{ t[2] }}</td>
+            <td>{{ t[3] }}</td>
+            <td>{{ t[4] }}</td>
+            <td>{{ t[5] }}</td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

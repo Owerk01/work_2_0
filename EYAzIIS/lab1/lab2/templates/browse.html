@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Поиск по лексике корпуса</h2>
+<form method="POST" class="row g-3 mb-4">
+    <div class="col-md-3"><input type="text" name="lemma" class="form-control" placeholder="Лемма"></div>
+    <div class="col-md-3"><input type="text" name="form" class="form-control" placeholder="Форма"></div>
+    <div class="col-md-2"><input type="text" name="pos" class="form-control" placeholder="Часть речи"></div>
+    <div class="col-md-2"><button type="submit" class="btn btn-secondary">Найти</button></div>
+</form>
+{% if data %}
+<table class="table table-hover">
+    <thead><tr><th>Лемма</th><th>Форма</th><th>Часть речи</th><th>Роль</th><th>Частота</th><th>Текст ID</th><th>Контекст</th></tr></thead>
+    <tbody>
+    {% for row in data %}
+        <tr>
+            <td>{{ row[2] }}</td>
+            <td>{{ row[3] }}</td>
+            <td>{{ row[4] }}</td>
+            <td>{{ row[5] }}</td>
+            <td>{{ row[6] }}</td>
+            <td>{{ row[1] }}</td>
+            <!-- Кнопка вызывает конкорданс по форме слова и ID текста -->
+            <td><a href="{{ url_for('concordance', text_id=row[1], word=row[3]) }}" class="btn btn-sm btn-info">Показать в тексте</a></td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>Нет данных. Загрузите текст на главной странице!</p>
+{% endif %}
+{% endblock %}

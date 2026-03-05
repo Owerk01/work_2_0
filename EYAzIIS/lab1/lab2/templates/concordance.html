@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Конкорданс: "{{ word }}"</h2>
+<a href="{{ url_for('browse') }}" class="btn btn-sm btn-secondary mb-3">← Назад к поиску</a>
+{% if matches %}
+    <div class="list-group">
+    {% for m in matches %}
+        <div class="list-group-item font-monospace">
+            <span class="text-muted">{{ m.prefix }}</span>
+            <span class="fw-bold text-primary bg-light px-1">{{ m.match }}</span>
+            <span class="text-muted">{{ m.suffix }}</span>
+        </div>
+    {% endfor %}
+    </div>
+{% else %}
+    <div class="alert alert-warning">Вхождений не найдено в данном тексте.</div>
+{% endif %}
+{% endblock %}
