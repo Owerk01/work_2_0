@@ -75,7 +75,6 @@ class SQLhelper:
         query = f"SELECT * FROM {DB_NAME}"
         if conditions:
             query += " WHERE " + " AND ".join(conditions)
-        query += " LIMIT 100"
         return self.db.select_query(query, tuple(params))
 
     def get_stats(self):
@@ -264,7 +263,8 @@ class Parser:
             matches.append({
                 "prefix": prefix.replace("\n", " "),
                 "match": match.group(),
-                "suffix": suffix.replace("\n", " ")
+                "suffix": suffix.replace("\n", " "),
+                "position": match.start()  
             })
             if len(matches) >= 20:
                 break

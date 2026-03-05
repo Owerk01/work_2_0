@@ -19,7 +19,6 @@ def index():
 
 @app.route('/parse/', methods=['POST'])
 def parse():
-    # Сбор метаданных из формы
     author = request.form.get('author', 'Unknown').strip()
     name = request.form.get('name', 'Untitled').strip()
     year = request.form.get('year', 2024)
@@ -31,12 +30,10 @@ def parse():
     content = ""
     filename = ""
     
-    # Обработка файла или текста
     file = request.files.get('file')
     input_text = request.form.get('text', '').strip()
     
     if file and file.filename != '':
-        # Загрузка файла
         filename = secure_filename(file.filename)
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(filepath)
@@ -45,7 +42,6 @@ def parse():
         content = handler.parser.extract_text(filepath, filename)
         
     elif input_text:
-        # Сохранение вручную введённого текста в файл
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         safe_name = secure_filename(name) if name else "manual"
         filename = f"manual_{safe_name}_{timestamp}.txt"
@@ -91,18 +87,17 @@ def view_text(text_id):
     if not text_data:
         flash("Текст не найден!", "error")
         return redirect(url_for('corpus_list'))
-    return render_template('view_text.html', text=text_data)
+    highlight_pos = request.args.get('highlight', type=int)
+    return render_template('view_text.html', text=text_data, highlight_pos=highlight_pos)
 
 @app.route('/corpus/delete/<int:text_id>')
 def delete_text(text_id):
     helper = SQLhelper()
     try:
-        # Получаем имя файла перед удалением
         text_data = helper.get_text_by_id(text_id)
         if text_data:
             filename = text_data[1]
             filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            # Удаляем файл с диска
             if os.path.exists(filepath):
                 os.remove(filepath)
         
@@ -131,22 +126,11 @@ def edit_text(text_id):
         subject_area = request.form.get('subject_area', 'General').strip()
         
         content = ""
-        filename = text_data[1]  # Сохраняем старое имя файла по умолчанию
-        
-        file = request.files.get('file')
         input_text = request.form.get('text', '').strip()
-        
-        if file and file.filename != '':
-            # Новый файл загружен
-            filename = secure_filename(file.filename)
-            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            file.save(filepath)
             
-            handler = CorpusHandler()
-            content = handler.parser.extract_text(filepath, filename)
+        handler = CorpusHandler()
             
-        elif input_text:
-            # Текст введён вручную - сохраняем в файл
+        if input_text:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             safe_name = secure_filename(name) if name else "manual"
             filename = f"manual_{safe_name}_{timestamp}.txt"
@@ -171,7 +155,6 @@ def edit_text(text_id):
         meta = (filename, author, name, int(year), source, genre, style, subject_area)
         
         try:
-            # Удаляем старый файл с диска
             old_filepath = os.path.join(app.config['UPLOAD_FOLDER'], text_data[1])
             if os.path.exists(old_filepath) and old_filepath != filepath:
                 os.remove(old_filepath)
@@ -183,7 +166,6 @@ def edit_text(text_id):
             
         return redirect(url_for('corpus_list'))
     
-    # GET запрос - показываем форму с заполненными данными
     return render_template('edit_text.html', text=text_data)
 
 @app.route('/browse/', methods=['GET', 'POST'])

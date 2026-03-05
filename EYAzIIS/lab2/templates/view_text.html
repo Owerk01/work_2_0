@@ -13,11 +13,49 @@
     </div>
     <div class="card-body">
         <h5>Содержимое текста:</h5>
-        <div class="border p-3 bg-light" style="max-height: 400px; overflow-y: auto;">
-            <pre style="white-space: pre-wrap;">{{ text[9] }}</pre>
+        <div id="text-content" class="border p-3 bg-light" style="max-height: 600px; overflow-y: auto; position: relative;">
+            <pre id="text-pre" style="white-space: pre-wrap;">{{ text[9] }}</pre>
         </div>
     </div>
 </div>
+
+{% if highlight_pos is not none %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const pos = {{ highlight_pos }};
+    const preElement = document.getElementById('text-pre');
+    const content = preElement.textContent;
+    
+    if (pos >= 0 && pos < content.length) {
+        const textBefore = content.substring(0, pos);
+        const lines = textBefore.split('\n');
+        const lineNumber = lines.length - 1;
+        
+        const lineHeight = 24; 
+        const scrollPos = lineNumber * lineHeight;
+        
+        const container = document.getElementById('text-content');
+        container.scrollTop = Math.max(0, scrollPos - 100); 
+        
+        const originalBg = preElement.style.backgroundColor;
+        preElement.style.backgroundColor = '#fff3cd'; 
+        
+        setTimeout(() => {
+            preElement.style.backgroundColor = originalBg;
+        }, 2000);
+        
+        const alert = document.createElement('div');
+        alert.className = 'alert alert-info position-absolute top-0 start-50 translate-middle-x mt-2';
+        alert.style.zIndex = '1000';
+        alert.textContent = 'Вхождение подсвечено!';
+        document.getElementById('text-content').appendChild(alert);
+        
+        setTimeout(() => alert.remove(), 2000);
+    }
+});
+</script>
+{% endif %}
+
 <a href="{{ url_for('corpus_list') }}" class="btn btn-secondary mt-3">← Назад к списку</a>
-<a href="{{ url_for('edit_text', text_id=text[0]) }}" class="btn btn-warning mt-3">✏️ Редактировать</a>
+<a href="{{ url_for('edit_text', text_id=text[0]) }}" class="btn btn-warning mt-3">Редактировать</a>
 {% endblock %}

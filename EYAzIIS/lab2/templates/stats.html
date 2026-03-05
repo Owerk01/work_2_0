@@ -4,7 +4,6 @@
 {% if stats %}
 <p>Всего записей в логе: {{ stats|length }}</p>
 
-<!-- График -->
 <canvas id="perfChart" height="100"></canvas>
 
 <h3 class="mt-4">Таблица данных:</h3>
@@ -33,12 +32,11 @@
 <script>
     const ctx = document.getElementById('perfChart').getContext('2d');
     
-    // Безопасное получение данных из Jinja
     const rawData = {{ stats | tojson }};
     
-    const labels = rawData.map(row => row[2]); // timestamp
-    const wordCounts = rawData.map(row => row[0]); // count
-    const durations = rawData.map(row => row[1]); // duration
+    const labels = rawData.map(row => row[2]); 
+    const wordCounts = rawData.map(row => row[0]); 
+    const durations = rawData.map(row => row[1]); 
 
     new Chart(ctx, {
         type: 'line',

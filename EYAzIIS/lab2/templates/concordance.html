@@ -7,10 +7,17 @@
     {% for m in matches %}
         <div class="list-group-item font-monospace">
             <span class="text-muted">{{ m.prefix }}</span>
-            <span class="fw-bold text-primary bg-light px-1">{{ m.match }}</span>
+            <a href="{{ url_for('view_text', text_id=text_id, highlight=m.position) }}" 
+               class="fw-bold text-primary bg-light px-1 text-decoration-none"
+               title="Перейти к тексту">
+                {{ m.match }}
+            </a>
             <span class="text-muted">{{ m.suffix }}</span>
         </div>
     {% endfor %}
+    </div>
+    <div class="mt-3 text-muted small">
+        Найдено вхождений: {{ matches|length }}. Нажмите на слово, чтобы перейти к тексту.
     </div>
 {% else %}
     <div class="alert alert-warning">Вхождений не найдено в данном тексте.</div>

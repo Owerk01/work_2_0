@@ -16,7 +16,6 @@ class DB:
         self.conn.execute("PRAGMA foreign_keys = ON")
         self.crs = self.conn.cursor()
         
-        # Таблица текстов (Метаданные корпуса)
         self.crs.execute(f"""
             CREATE TABLE IF NOT EXISTS {CORPUS_DB_NAME} (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -33,7 +32,6 @@ class DB:
             )
         """)
         
-        # Таблица лексики (Связана с текстом)
         self.crs.execute(f"""
             CREATE TABLE IF NOT EXISTS {DB_NAME} (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -50,7 +48,6 @@ class DB:
         self.crs.execute(f"CREATE INDEX IF NOT EXISTS idx_lemma ON {DB_NAME}(lemma)")
         self.crs.execute(f"CREATE INDEX IF NOT EXISTS idx_text_id ON {DB_NAME}(text_id)")
         
-        # Таблица статистики парсинга
         self.crs.execute("""
             CREATE TABLE IF NOT EXISTS parsing_stats (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
