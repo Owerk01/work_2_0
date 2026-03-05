@@ -1,5 +1,6 @@
 import spacy
 import time
+import re
 from data import DB, DB_NAME, CORPUS_DB_NAME
 
 
@@ -96,6 +97,43 @@ class SQLhelper:
             params = (limit,)
         
         return self.db.select_query(query, params)
+    
+    def find_word_occurrences(self, word: str, text_id: int | None = None) -> list[tuple[int, int]]:
+
+        word_lower = word.lower().strip()
+        
+        if text_id is not None:
+            query = f"""
+                SELECT text_id, SUM(frequency) AS count 
+                FROM {DB_NAME} 
+                WHERE (lemma LIKE ? OR form LIKE ?) AND text_id = ?
+                GROUP BY text_id
+            """
+            params = (f"%{word_lower}%", f"%{word_lower}%", text_id)
+        else:
+            query = f"""
+                SELECT text_id, SUM(frequency) AS count 
+                FROM {DB_NAME} 
+                WHERE lemma LIKE ? OR form LIKE ?
+                GROUP BY text_id
+            """
+            params = (f"%{word_lower}%", f"%{word_lower}%")
+        
+        return self.db.select_query(query, params)
+
+    def get_text_content_by_id(self, text_id: int) -> str | None:
+        result = self.db.select_query(
+            f"SELECT content FROM {CORPUS_DB_NAME} WHERE id = ?",
+            (text_id,)
+        )
+        return result[0][0] if result else None
+
+    def get_filename_by_id(self, text_id: int) -> str | None:
+        result = self.db.select_query(
+            f"SELECT filename FROM {CORPUS_DB_NAME} WHERE id = ?",
+            (text_id,)
+        )
+        return result[0][0] if result else None
 
 
     def insert(self, lemma:str, form:str, pos:str, role:str)->None:
@@ -319,18 +357,36 @@ class CorpusHandler:
         return stats
     
     # TODO
-    def concrodance(self, word:str)->dict[str, list[str]]:
-        # Файл: часть предложений с переданным словом в них
-        matches: dict[str, list[str]]= {}
 
+
+    def concordance(self, word: str, text_id: int | None = None, limit: int = 10) -> dict[str, list[str]]:
+
+        matches: dict[str, list[str]] = {}
+        
+        occurrences = self.parser.sql.find_word_occurrences(word, text_id)
+        
+        if not occurrences:
+            return matches
+        
+        for txt_id, count in occurrences:
+            filename = self.parser.sql.get_filename_by_id(txt_id)
+            content = self.parser.sql.get_text_content_by_id(txt_id)
+            
+            if not filename or not content:
+                continue
+            
+            sentences = re.split(r'(?<=[.!?])\s+', content)
+            
+            word_pattern = re.compile(r'\b' + re.escape(word) + r'\b', re.IGNORECASE)
+            file_examples = []
+            
+            for sentence in sentences:
+                if word_pattern.search(sentence):
+                    file_examples.append(sentence.strip())
+                    if len(file_examples) >= limit:
+                        break
+            
+            if file_examples:
+                matches[filename] = file_examples
+        
         return matches
-
-
-    
-            
-    
-    
-    
-            
-
-
