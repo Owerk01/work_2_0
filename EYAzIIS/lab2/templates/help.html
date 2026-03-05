@@ -1,16 +1,316 @@
 {% extends "base.html" %}
 {% block content %}
-<h2>Руководство пользователя (Лабораторная работа №2)</h2>
+<h2 class="mb-4">Руководство пользователя корпусного менеджера</h2>
+
 <div class="alert alert-info">
-    <strong>Назначение:</strong> Корпусный менеджер для сбора, хранения и лингвистического анализа текстов естественного языка (английский).
+    <strong>Назначение системы:</strong> Корпусный менеджер для построения, хранения и лингвистического анализа 
+    размеченных текстов естественного языка (английский).
 </div>
-<h3>Функционал</h3>
+
+<hr class="my-4">
+
+<h3 class="mt-4">1. О корпусах текстов</h3>
+<div class="card mb-3">
+    <div class="card-body">
+        <p><strong>Корпус текстов</strong> — это большой, представленный в электронном виде, унифицированный, 
+        структурированный, размеченный, филологически компетентный массив языковых данных.</p>
+        
+        <h5>Важнейшие свойства корпуса:</h5>
+        <ul>
+            <li><strong>Репрезентативность</strong> — корпус должен объективно представить разнообразие 
+            изучаемого явления в речевой практике носителей языка</li>
+            <li><strong>Разметка</strong> — приписывание текстам и их компонентам специальных меток 
+            (морфологических, синтаксических)</li>
+            <li><strong>Метаданные</strong> — библиографическая и типологическая информация о каждом тексте 
+            (автор, год, жанр, предметная область)</li>
+        </ul>
+        
+        <p class="mb-0"><strong>Внимание!</strong> В данной системе слова (лексемы) извлекаются автоматически 
+        из текстов. <u>Нельзя добавлять или удалять отдельные слова</u> — они существуют только в контексте 
+        исходного текста. Для изменения лексики необходимо редактировать сам текст.</p>
+    </div>
+</div>
+
+<hr class="my-4">
+
+<h3 class="mt-4">2. Загрузка текста в корпус</h3>
+<p>Перейдите на <a href="{{ url_for('index') }}">главную страницу</a> для добавления нового текста.</p>
+
+<h5>Шаг 1: Выберите источник текста</h5>
 <ul>
-    <li><strong>Пополнение корпуса:</strong> Загрузка текстов с метаданными (Автор, Год, Предметная область). Поддержка .txt, .rtf, .docx, .pdf.</li>
-    <li><strong>Лингвистическая разметка:</strong> Автоматическое определение леммы, части речи и синтаксической роли (spaCy).</li>
-    <li><strong>Поиск и Конкорданс:</strong> Поиск по лексическим единицам и просмотр слова в контексте исходного текста.</li>
-    <li><strong>Статистика:</strong> Оценка производительности и объемов корпуса.</li>
+    <li><strong>Вставка текста</strong> — скопируйте и вставьте текст в поле «Текст»</li>
+    <li><strong>Загрузка файла</strong> — выберите файл формата <code>.txt</code>, <code>.rtf</code>, 
+    <code>.docx</code> или <code>.pdf</code></li>
 </ul>
-<h3>Требования к корпусу</h3>
-<p>Корпус является репрезентативным массивом данных. Редактирование отдельных слов запрещено для сохранения целостности данных. Изменения вносятся путем перезагрузки исходного текста.</p>
+
+<h5>Шаг 2: Заполните метаданные (обязательно для корпуса!)</h5>
+<table class="table table-sm table-bordered">
+    <thead class="table-light">
+        <tr><th>Поле</th><th>Описание</th><th>Пример</th></tr>
+    </thead>
+    <tbody>
+        <tr><td>Автор</td><td>Автор текста</td><td>George Orwell</td></tr>
+        <tr><td>Название</td><td>Название текста</td><td>1984</td></tr>
+        <tr><td>Год</td><td>Год создания (1800-2026)</td><td>1949</td></tr>
+        <tr><td>Источник</td><td>Откуда получен текст</td><td>Project Gutenberg</td></tr>
+        <tr><td>Жанр</td><td>Литературный жанр</td><td>Dystopia, Novel</td></tr>
+        <tr><td>Стиль</td><td>Стиль изложения</td><td>Written, Formal</td></tr>
+        <tr><td>Предметная область</td><td>Тематика текста</td><td>Литература, Медицина, IT...</td></tr>
+    </tbody>
+</table>
+
+<h5>Шаг 3: Обработка</h5>
+<p>После нажатия кнопки <strong>«Обработать и добавить в корпус»</strong> система:</p>
+<ol>
+    <li>Сохранит текст с метаданными в таблицу <code>corpus_texts</code></li>
+    <li>Разобьёт текст на слова (токенизация)</li>
+    <li>Определит для каждого слова:
+        <ul>
+            <li><strong>Лемму</strong> — нормальную (словарную) форму</li>
+            <li><strong>Форму</strong> — конкретное написание в тексте</li>
+            <li><strong>Часть речи</strong> — грамматическую категорию</li>
+            <li><strong>Синтаксическую роль</strong> — функцию в предложении</li>
+            <li><strong>Частоту</strong> — количество вхождений в тексте</li>
+        </ul>
+    </li>
+    <li>Сохранит разметку в таблицу <code>vocabulary</code></li>
+    <li>Запишет статистику производительности</li>
+</ol>
+
+<hr class="my-4">
+
+<h3 class="mt-4">3. Управление корпусом текстов</h3>
+<p>Перейдите на страницу <a href="{{ url_for('corpus_list') }}">«Корпус текстов»</a> для управления документами.</p>
+
+<h5>Доступные действия:</h5>
+<table class="table table-sm">
+    <thead class="table-light">
+        <tr><th>Кнопка</th><th>Действие</th><th>Описание</th></tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><span class="btn btn-sm btn-info">Текст</span></td>
+            <td>Просмотр</td>
+            <td>Показать полное содержимое текста и все метаданные</td>
+        </tr>
+        <tr>
+            <td><span class="btn btn-sm btn-warning">✏️</span></td>
+            <td>Редактирование</td>
+            <td>Изменить текст и/или метаданные. <strong>Старый текст и все его лексемы будут удалены, 
+            новый текст обработается заново!</strong></td>
+        </tr>
+        <tr>
+            <td><span class="btn btn-sm btn-danger">🗑️</span></td>
+            <td>Удаление</td>
+            <td>Удалить текст из корпуса. <strong>Все связанные лексемы удаляются автоматически 
+            (CASCADE)</strong></td>
+        </tr>
+    </tbody>
+</table>
+
+<div class="alert alert-warning">
+    <strong>Важно!</strong> При редактировании текста весь процесс лингвистического анализа 
+    выполняется заново. Это гарантирует актуальность разметки.
+</div>
+
+<hr class="my-4">
+
+<h3 class="mt-4">4. Поиск и просмотр лексики</h3>
+<p>Перейдите на страницу <a href="{{ url_for('browse') }}">«Поиск по лексике»</a> для работы со словарём корпуса.</p>
+
+<h5>Фильтрация:</h5>
+<p>Введите критерии поиска (поддерживается частичное совпадение):</p>
+<ul>
+    <li><strong>Лемма</strong> — например, <code>run</code> найдёт все формы этой лексемы</li>
+    <li><strong>Форма</strong> — конкретное написание, например <code>running</code></li>
+    <li><strong>Часть речи</strong> — например, <code>Глагол</code>, <code>Существительное</code></li>
+</ul>
+
+<h5>Действия с лексемами:</h5>
+<table class="table table-sm">
+    <thead class="table-light">
+        <tr><th>Кнопка</th><th>Действие</th><th>Описание</th></tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><span class="btn btn-sm btn-warning">✏️</span></td>
+            <td>Редактирование</td>
+            <td>Изменить часть речи и/или синтаксическую роль. 
+            <strong>Частота старой записи уменьшится на 1, будет создана новая запись</strong></td>
+        </tr>
+        <tr>
+            <td><span class="btn btn-sm btn-info">Конкорданс</span></td>
+            <td>Конкорданс</td>
+            <td>Показать слово в контексте исходного текста (окружающий текст ±50 символов)</td>
+        </tr>
+    </tbody>
+</table>
+
+<div class="alert alert-info">
+    <strong>Принцип целостности:</strong> Лемма и форма слова <u>не могут</u> быть изменены вручную, 
+    так как они извлекаются из исходного текста. Для изменения необходимо редактировать сам текст.
+</div>
+
+<hr class="my-4">
+
+<h3 class="mt-4">5. Статистика производительности</h3>
+<p>Перейдите на страницу <a href="{{ url_for('stats') }}">«Статистика»</a> для анализа работы системы.</p>
+
+<h5>Отображаемые данные:</h5>
+<ul>
+    <li><strong>График</strong> — зависимость количества слов от времени обработки</li>
+    <li><strong>Таблица</strong> — история всех загрузок с точными замерами</li>
+    <li><strong>Скорость</strong> — количество слов в секунду (слов/сек)</li>
+    <li><strong>Объём корпуса</strong> — общее количество текстов и слов</li>
+</ul>
+
+<hr class="my-4">
+
+<h3 class="mt-4">6. Основные термины</h3>
+<dl class="row">
+    <dt class="col-md-3"><strong>Лексема (lexeme)</strong></dt>
+    <dd class="col-md-9">Абстрактная единица словаря, объединяющая все формы одного слова. 
+    Например, лексема <em>run</em> включает формы: <em>run, runs, ran, running</em>.</dd>
+    
+    <dt class="col-md-3"><strong>Форма слова (word form)</strong></dt>
+    <dd class="col-md-9">Конкретное написание слова в тексте. Например, в предложении 
+    «He is running» форма слова — <em>running</em>.</dd>
+    
+    <dt class="col-md-3"><strong>Лемма (lemma)</strong></dt>
+    <dd class="col-md-9">Нормальная (словарная) форма слова. Для глаголов — инфинитив 
+    (<em>to run</em> → <em>run</em>), для существительных — именительный падеж единственного числа 
+    (<em>cats</em> → <em>cat</em>).</dd>
+    
+    <dt class="col-md-3"><strong>Часть речи (POS)</strong></dt>
+    <dd class="col-md-9">Грамматическая категория слова. В системе используются русские названия:
+    <code>Существительное</code>, <code>Глагол</code>, <code>Прилагательное</code>, 
+    <code>Наречие</code>, <code>Местоимение</code>, <code>Предлог</code>, <code>Союз</code> и др.</dd>
+    
+    <dt class="col-md-3"><strong>Синтаксическая роль (Dependency)</strong></dt>
+    <dd class="col-md-9">Функция слова в предложении согласно теории зависимостей. Примеры:
+    <ul class="mb-0">
+        <li><code>Именное подлежащее (nsubj)</code> — подлежащее</li>
+        <li><code>Прямое дополнение (dobj)</code> — объект действия</li>
+        <li><code>Корень предложения (root)</code> — главный глагол</li>
+        <li><code>Определение (amod)</code> — атрибутивное прилагательное</li>
+        <li><code>Обстоятельство (advmod)</code> — наречный модификатор</li>
+    </ul>
+    </dd>
+    
+    <dt class="col-md-3"><strong>Конкорданс</strong></dt>
+    <dd class="col-md-9">Список вхождений слова в тексте с отображением окружающего контекста. 
+    Используется для лингвистического анализа употребления слова.</dd>
+    
+    <dt class="col-md-3"><strong>Метаданные</strong></dt>
+    <dd class="col-md-9">Информация о тексте, не являющаяся его содержимым: автор, год, жанр, 
+    предметная область, источник. Необходима для филологической компетентности корпуса.</dd>
+</dl>
+
+<hr class="my-4">
+
+<h3 class="mt-4">7. Технические характеристики</h3>
+
+<h5>Поддерживаемые форматы:</h5>
+<ul>
+    <li><code>.txt</code> — простой текст (UTF-8)</li>
+    <li><code>.rtf</code> — Rich Text Format</li>
+    <li><code>.docx</code> — Microsoft Word (требуется библиотека python-docx)</li>
+    <li><code>.pdf</code> — PDF-документы (требуется библиотека pdfplumber)</li>
+</ul>
+
+<h5>Ограничения:</h5>
+<ul>
+    <li>Анализ выполняется только для <strong>английских текстов</strong> (модель spaCy en_core_web_sm)</li>
+    <li>Слова с цифрами, символами, URL, email игнорируются</li>
+    <li>Длина леммы и формы ограничена 31 символом</li>
+    <li>Пунктуация и пробелы не сохраняются как отдельные токены</li>
+</ul>
+
+<h5>Структура хранения данных:</h5>
+<ul>
+    <li><strong>corpus_texts</strong> — тексты с метаданными</li>
+    <li><strong>vocabulary</strong> — лингвистическая разметка (связана с текстами через text_id)</li>
+    <li><strong>parsing_stats</strong> — статистика производительности</li>
+</ul>
+
+<hr class="my-4">
+
+<h3 class="mt-4">8. Часто задаваемые вопросы</h3>
+
+<div class="accordion" id="faqAccordion">
+    <div class="accordion-item">
+        <h2 class="accordion-header">
+            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
+                Почему нельзя добавить слово вручную?
+            </button>
+        </h2>
+        <div id="faq1" class="accordion-collapse collapse show" data-bs-parent="#faqAccordion">
+            <div class="accordion-body">
+                Это требование целостности корпуса. Слова существуют только в контексте текста. 
+                Если нужно добавить слово — добавьте его в исходный текст и обработайте заново.
+            </div>
+        </div>
+    </div>
+    
+    <div class="accordion-item">
+        <h2 class="accordion-header">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
+                Что происходит при редактировании текста?
+            </button>
+        </h2>
+        <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+            <div class="accordion-body">
+                Старый текст и все его лексемы удаляются (CASCADE). Новый текст обрабатывается 
+                заново с полным лингвистическим анализом. Это гарантирует актуальность данных.
+            </div>
+        </div>
+    </div>
+    
+    <div class="accordion-item">
+        <h2 class="accordion-header">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">
+                Как работает редактирование части речи?
+            </button>
+        </h2>
+        <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+            <div class="accordion-body">
+                Частота старой записи уменьшается на 1. Создаётся новая запись с изменёнными 
+                параметрами (частота = 1). Если частота старой была 1 — она удаляется.
+            </div>
+        </div>
+    </div>
+    
+    <div class="accordion-item">
+        <h2 class="accordion-header">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq4">
+                Почему search для "run" не находит "running"?
+            </button>
+        </h2>
+        <div id="faq4" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+            <div class="accordion-body">
+                Поиск по форме слова точный. Для поиска всех форм используйте поле «Лемма» — 
+                там поддерживается частичное совпадение. Конкорданс использует границы слова 
+                (<code>\b</code>), поэтому "run" не найдётся внутри "running".
+            </div>
+        </div>
+    </div>
+</div>
+
+<hr class="my-4">
+
+<h3 class="mt-4">9. Возникли проблемы?</h3>
+<div class="alert alert-warning">
+    <h5>Проверьте следующее:</h5>
+    <ul class="mb-0">
+        <li>Текст должен быть на <strong>английском языке</strong></li>
+        <li>Файл не должен быть повреждён</li>
+        <li>Все обязательные поля метаданных должны быть заполнены</li>
+        <li>Для работы требуется модель spaCy: <code>python -m spacy download en_core_web_sm</code></li>
+        <li>Для .docx и .pdf нужны дополнительные библиотеки (см. requirements.txt)</li>
+    </ul>
+</div>
+
+<div class="text-center mt-5">
+    <a href="{{ url_for('index') }}" class="btn btn-primary btn-lg">← Вернуться на главную</a>
+</div>
 {% endblock %}

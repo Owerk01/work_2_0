@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Редактирование текста корпуса</h2>
+<form method="POST" enctype="multipart/form-data">
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label class="form-label">Текст (вставка):</label>
+            <textarea name="text" class="form-control" rows="6">{{ text[9] }}</textarea>
+        </div>
+        <div class="col-md-6 mb-3">
+            <label class="form-label">Файл (.txt, .rtf, .docx, .pdf):</label>
+            <input type="file" name="file" class="form-control" accept=".txt,.rtf,.docx,.pdf">
+            <small class="text-muted">Текущий файл: {{ text[1] }}</small>
+        </div>
+    </div>
+    <hr>
+    <h5>Метаданные текста</h5>
+    <div class="row g-3">
+        <div class="col-md-3">
+            <input type="text" name="author" class="form-control" placeholder="Автор" value="{{ text[2] }}" required>
+        </div>
+        <div class="col-md-3">
+            <input type="text" name="name" class="form-control" placeholder="Название текста" value="{{ text[3] }}" required>
+        </div>
+        <div class="col-md-2">
+            <input type="number" name="year" class="form-control" placeholder="Год" value="{{ text[4] }}">
+        </div>
+        <div class="col-md-4">
+            <select name="subject_area" class="form-select">
+                <option value="General" {% if text[8] == 'General' %}selected{% endif %}>Общая</option>
+                <option value="Cinema" {% if text[8] == 'Cinema' %}selected{% endif %}>Кинематограф</option>
+                <option value="Cooking" {% if text[8] == 'Cooking' %}selected{% endif %}>Кулинария</option>
+                <option value="Medicine" {% if text[8] == 'Medicine' %}selected{% endif %}>Медицина</option>
+                <option value="IT" {% if text[8] == 'IT' %}selected{% endif %}>IT</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <input type="text" name="genre" class="form-control" placeholder="Жанр" value="{{ text[6] }}">
+        </div>
+        <div class="col-md-3">
+            <input type="text" name="style" class="form-control" placeholder="Стиль" value="{{ text[7] }}">
+        </div>
+    </div>
+    <button type="submit" class="btn btn-warning mt-3">Сохранить изменения</button>
+    <a href="{{ url_for('corpus_list') }}" class="btn btn-secondary mt-3">Отмена</a>
+</form>
+{% endblock %}

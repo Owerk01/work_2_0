@@ -2,6 +2,7 @@ import os
 from flask import Flask, request, render_template, redirect, url_for, flash
 from processor import Parser, SQLhelper, CorpusHandler
 from werkzeug.utils import secure_filename
+from datetime import datetime
 
 BASE_DIR = os.path.dirname(__file__)
 UPLOAD_FOLDER = os.path.join(BASE_DIR, 'uploads')
@@ -18,6 +19,7 @@ def index():
 
 @app.route('/parse/', methods=['POST'])
 def parse():
+    # Сбор метаданных из формы
     author = request.form.get('author', 'Unknown').strip()
     name = request.form.get('name', 'Untitled').strip()
     year = request.form.get('year', 2024)
@@ -27,20 +29,36 @@ def parse():
     subject_area = request.form.get('subject_area', 'General').strip()
     
     content = ""
-    filename = "manual_input.txt"
+    filename = ""
     
+    # Обработка файла или текста
     file = request.files.get('file')
     input_text = request.form.get('text', '').strip()
     
     if file and file.filename != '':
+        # Загрузка файла
         filename = secure_filename(file.filename)
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(filepath)
         
         handler = CorpusHandler()
         content = handler.parser.extract_text(filepath, filename)
+        
     elif input_text:
-        content = input_text
+        # Сохранение вручную введённого текста в файл
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        safe_name = secure_filename(name) if name else "manual"
+        filename = f"manual_{safe_name}_{timestamp}.txt"
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        
+        try:
+            with open(filepath, 'w', encoding='utf-8') as f:
+                f.write(input_text)
+            content = input_text
+        except Exception as e:
+            flash(f"Ошибка сохранения текста: {e}", "error")
+            return redirect(url_for('index'))
+            
     else:
         flash("Не был введен текст и не был прикреплен файл!", "error")
         return redirect(url_for('index'))
@@ -79,6 +97,15 @@ def view_text(text_id):
 def delete_text(text_id):
     helper = SQLhelper()
     try:
+        # Получаем имя файла перед удалением
+        text_data = helper.get_text_by_id(text_id)
+        if text_data:
+            filename = text_data[1]
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            # Удаляем файл с диска
+            if os.path.exists(filepath):
+                os.remove(filepath)
+        
         helper.delete_corpus_text(text_id)
         flash("Текст успешно удален из корпуса!", "success")
     except Exception as e:
@@ -104,20 +131,34 @@ def edit_text(text_id):
         subject_area = request.form.get('subject_area', 'General').strip()
         
         content = ""
-        filename = text_data[1]  # Сохраняем старое имя файла
+        filename = text_data[1]  # Сохраняем старое имя файла по умолчанию
         
         file = request.files.get('file')
         input_text = request.form.get('text', '').strip()
         
         if file and file.filename != '':
+            # Новый файл загружен
             filename = secure_filename(file.filename)
             filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             file.save(filepath)
             
             handler = CorpusHandler()
             content = handler.parser.extract_text(filepath, filename)
+            
         elif input_text:
-            content = input_text
+            # Текст введён вручную - сохраняем в файл
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            safe_name = secure_filename(name) if name else "manual"
+            filename = f"manual_{safe_name}_{timestamp}.txt"
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            
+            try:
+                with open(filepath, 'w', encoding='utf-8') as f:
+                    f.write(input_text)
+                content = input_text
+            except Exception as e:
+                flash(f"Ошибка сохранения текста: {e}", "error")
+                return render_template('edit_text.html', text=text_data)
         else:
             flash("Не был введен текст и не был прикреплен файл!", "error")
             return render_template('edit_text.html', text=text_data)
@@ -130,6 +171,11 @@ def edit_text(text_id):
         meta = (filename, author, name, int(year), source, genre, style, subject_area)
         
         try:
+            # Удаляем старый файл с диска
+            old_filepath = os.path.join(app.config['UPLOAD_FOLDER'], text_data[1])
+            if os.path.exists(old_filepath) and old_filepath != filepath:
+                os.remove(old_filepath)
+            
             word_count, duration = handler.edit_text_in_corpus(text_id, meta, content)
             flash(f"Текст успешно обновлен! Слов: {word_count}, время: {duration:.3f} сек.", "success")
         except Exception as e:
@@ -163,7 +209,6 @@ def edit_lexeme(lexeme_id):
         flash("Лексема не найдена!", "error")
         return redirect(url_for('browse'))
     
-    # lexeme: (id, text_id, lemma, form, pos, role, frequency)
     if request.method == 'POST':
         new_pos = request.form.get('part_of_speech', lexeme[4]).strip()
         new_role = request.form.get('role', lexeme[5]).strip()

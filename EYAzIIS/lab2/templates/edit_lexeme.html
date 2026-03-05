@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Редактирование лексемы</h2>
+<div class="card mb-3">
+    <div class="card-body">
+        <p><strong>Лемма:</strong> {{ lexeme[2] }}</p>
+        <p><strong>Форма:</strong> {{ lexeme[3] }}</p>
+        <p><strong>Текущая ЧР:</strong> {{ lexeme[4] }}</p>
+        <p><strong>Текущая роль:</strong> {{ lexeme[5] }}</p>
+        <p><strong>Частота:</strong> {{ lexeme[6] }}</p>
+    </div>
+</div>
+<form method="POST">
+    <div class="mb-3">
+        <label class="form-label">Часть речи</label>
+        <select name="part_of_speech" class="form-select">
+            <option value="Существительное" {% if lexeme[4] == 'Существительное' %}selected{% endif %}>Существительное</option>
+            <option value="Глагол" {% if lexeme[4] == 'Глагол' %}selected{% endif %}>Глагол</option>
+            <option value="Прилагательное" {% if lexeme[4] == 'Прилагательное' %}selected{% endif %}>Прилагательное</option>
+            <option value="Наречие" {% if lexeme[4] == 'Наречие' %}selected{% endif %}>Наречие</option>
+            <option value="Местоимение" {% if lexeme[4] == 'Местоимение' %}selected{% endif %}>Местоимение</option>
+            <option value="Предлог" {% if lexeme[4] == 'Предлог' %}selected{% endif %}>Предлог</option>
+            <option value="Союз" {% if lexeme[4] == 'Сочинительный союз' or lexeme[4] == 'Подчинительный союз' %}selected{% endif %}>Союз</option>
+            <option value="Определитель" {% if lexeme[4] == 'Определитель' %}selected{% endif %}>Определитель</option>
+            <option value="Числительное" {% if lexeme[4] == 'Числительное' %}selected{% endif %}>Числительное</option>
+            <option value="Междометие" {% if lexeme[4] == 'Междометие' %}selected{% endif %}>Междометие</option>
+        </select>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Синтаксическая роль</label>
+        <select name="role" class="form-select">
+            <option value="Корень предложения" {% if lexeme[5] == 'Корень предложения' %}selected{% endif %}>Корень предложения</option>
+            <option value="Именное подлежащее" {% if lexeme[5] == 'Именное подлежащее' %}selected{% endif %}>Именное подлежащее</option>
+            <option value="Прямое дополнение" {% if lexeme[5] == 'Прямое дополнение' %}selected{% endif %}>Прямое дополнение</option>
+            <option value="Определение (прилагательное)" {% if lexeme[5] == 'Определение (прилагательное)' %}selected{% endif %}>Определение</option>
+            <option value="Обстоятельство" {% if lexeme[5] == 'Обстоятельство' %}selected{% endif %}>Обстоятельство</option>
+            <option value="Вспомогательный глагол" {% if lexeme[5] == 'Вспомогательный глагол' %}selected{% endif %}>Вспомогательный глагол</option>
+            <option value="Сочинительный союз" {% if lexeme[5] == 'Сочинительный союз' %}selected{% endif %}>Сочинительный союз</option>
+            <option value="Предлог" {% if lexeme[5] == 'Предлог' %}selected{% endif %}>Предлог</option>
+            <option value="Однородный член" {% if lexeme[5] == 'Однородный член' %}selected{% endif %}>Однородный член</option>
+            <option value="Придаточное определительное" {% if lexeme[5] == 'Придаточное определительное' %}selected{% endif %}>Придаточное определительное</option>
+        </select>
+    </div>
+    <button type="submit" class="btn btn-warning">Сохранить изменения</button>
+    <a href="{{ url_for('browse') }}" class="btn btn-secondary">Отмена</a>
+</form>
+{% endblock %}

@@ -91,35 +91,25 @@ class SQLhelper:
         return res[0] if res else None
 
     def update_lexeme_pos_role(self, lexeme_id, new_pos, new_role):
-        """
-        Редактирование POS/роли:
-        1. Уменьшаем частоту старой записи на 1
-        2. Создаём новую запись с новыми POS/role (частота = 1)
-        """
         old_entry = self.get_lexeme_by_id(lexeme_id)
         if not old_entry:
             return False
         
         text_id, lemma, form, old_pos, old_role, old_freq = old_entry[1], old_entry[2], old_entry[3], old_entry[4], old_entry[5], old_entry[6]
         
-        # Уменьшаем частоту старой записи
         if old_freq > 1:
             self.db.execute_query(f"UPDATE {DB_NAME} SET frequency = ? WHERE id = ?", (old_freq - 1, lexeme_id))
         else:
-            # Если частота была 1, удаляем старую запись
             self.db.execute_query(f"DELETE FROM {DB_NAME} WHERE id = ?", (lexeme_id,))
         
-        # Проверяем, существует ли уже запись с такими параметрами
         existing = self.db.select_query(f"""
             SELECT id, frequency FROM {DB_NAME} 
             WHERE text_id = ? AND lemma = ? AND form = ? AND part_of_speech = ? AND role = ?
         """, (text_id, lemma, form, new_pos, new_role))
         
         if existing:
-            # Увеличиваем частоту существующей записи
             self.db.execute_query(f"UPDATE {DB_NAME} SET frequency = ? WHERE id = ?", (existing[0][1] + 1, existing[0][0]))
         else:
-            # Создаём новую запись
             self.db.execute_query(f"""
                 INSERT INTO {DB_NAME} (text_id, lemma, form, part_of_speech, role, frequency) 
                 VALUES (?, ?, ?, ?, ?, 1)
@@ -138,28 +128,72 @@ class Parser:
         self.sql = SQLhelper()
         
         self.pos_map = {
-            "ADJ": "Прилагательное", "ADP": "Предлог", "ADV": "Наречие",
-            "AUX": "Вспомогательный глагол", "CCONJ": "Сочинительный союз", "DET": "Определитель",
-            "INTJ": "Междометие", "NOUN": "Существительное", "NUM": "Числительное",
-            "PART": "Частица", "PRON": "Местоимение", "PROPN": "Имя собственное",
-            "PUNCT": "Пунктуация", "SCONJ": "Подчинительный союз", "SYM": "Символ",
-            "VERB": "Глагол", "X": "Другое"
+            "ADJ": "Прилагательное",
+            "ADP": "Предлог",
+            "ADV": "Наречие",
+            "AUX": "Вспомогательный глагол",
+            "CCONJ": "Сочинительный союз",
+            "DET": "Определитель",
+            "INTJ": "Междометие",
+            "NOUN": "Существительное",
+            "NUM": "Числительное",
+            "PART": "Частица",
+            "PRON": "Местоимение",
+            "PROPN": "Имя собственное",
+            "PUNCT": "Пунктуация",
+            "SCONJ": "Подчинительный союз",
+            "SYM": "Символ",
+            "VERB": "Глагол",
+            "X": "Другое",
+            "SPACE": "Пробел"
         }
         
         self.dep_map = {
-            "root": "Корень предложения", "acl": "Придаточное определительное",
-            "advcl": "Обстоятельственное придаточное", "advmod": "Обстоятельство",
-            "amod": "Определение (прилагательное)", "appos": "Приложение",
-            "aux": "Вспомогательный глагол", "case": "Падежный маркер",
-            "cc": "Сочинительный союз", "ccomp": "Придаточное дополнительное",
-            "compound": "Составное слово", "conj": "Однородный член",
-            "csubj": "Придаточное подлежащее", "det": "Определитель",
-            "dobj": "Прямое дополнение", "expl": "Эксплетива",
-            "mark": "Маркер придаточного", "neg": "Отрицание",
-            "nmod": "Именная модификация", "nsubj": "Именное подлежащее",
-            "nummod": "Числовое определение", "parataxis": "Паратаксис",
-            "prep": "Предлог", "punct": "Пунктуация",
-            "relcl": "Относительное придаточное", "xcomp": "Придаточное безличное"
+        "ROOT": "Корень предложения",
+        "acl": "Придаточное определительное",
+        "acomp": "Придаточное дополнительное (прил.)",
+        "advcl": "Обстоятельственное придаточное",
+        "advmod": "Обстоятельство",
+        "agent": "Агент действия",
+        "amod": "Определение (прилагательное)",
+        "appos": "Приложение",
+        "attr": "Атрибут",
+        "aux": "Вспомогательный глагол",
+        "auxpass": "Вспомогательный глагол пассива",
+        "case": "Падежный маркер",
+        "cc": "Сочинительный союз",
+        "ccomp": "Придаточное дополнительное",
+        "compound": "Составное слово",
+        "conj": "Однородный член",
+        "csubj": "Придаточное подлежащее",
+        "csubjpass": "Придаточное подлежащее пассива",
+        "dative": "Дательный падеж",
+        "dep": "Зависимость по умолчанию",
+        "det": "Определитель",
+        "dobj": "Прямое дополнение",
+        "expl": "Эксплетива",
+        "intj": "Междометие",
+        "mark": "Маркер придаточного",
+        "meta": "Мета-информация",
+        "neg": "Отрицание",
+        "nmod": "Именная модификация",
+        "npadvmod": "Именное обстоятельство",
+        "nsubj": "Именное подлежащее",
+        "nsubjpass": "Именное подлежащее пассива",
+        "nummod": "Числовое определение",
+        "oprd": "Предикативное дополнение",
+        "parataxis": "Паратаксис",
+        "pcomp": "Придаточное предлога",
+        "pobj": "Объект предлога",
+        "poss": "Притяжательное",
+        "preconj": "Предшествующий союз",
+        "predet": "Предопределитель",
+        "prep": "Предлог",
+        "prt": "Частица",
+        "punct": "Пунктуация",
+        "quantmod": "Модификатор квантора",
+        "relcl": "Относительное придаточное",
+        "xcomp": "Придаточное безличное"
         }
 
     def extract_text(self, file_path, filename):
@@ -249,11 +283,5 @@ class CorpusHandler:
         return 0, 0
 
     def edit_text_in_corpus(self, text_id, meta, content):
-        """
-        Редактирование текста: удаляем старый текст и его лексемы, добавляем новый
-        """
-        # Удаляем старый текст (CASCADE удалит связанные лексемы)
         self.sql.delete_corpus_text(text_id)
-        
-        # Добавляем новый текст
         return self.add_text_to_corpus(meta, content)

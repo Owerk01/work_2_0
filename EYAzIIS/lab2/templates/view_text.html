@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>{{ text[3] }} ({{ text[2] }}, {{ text[4] }})</h2>
+<div class="card">
+    <div class="card-header">
+        <strong>Метаданные:</strong> 
+        Автор: {{ text[2] }} | 
+        Год: {{ text[4] }} | 
+        Жанр: {{ text[6] }} | 
+        Стиль: {{ text[7] }} | 
+        Область: {{ text[8] }} |
+        Файл: {{ text[1] }}
+    </div>
+    <div class="card-body">
+        <h5>Содержимое текста:</h5>
+        <div class="border p-3 bg-light" style="max-height: 400px; overflow-y: auto;">
+            <pre style="white-space: pre-wrap;">{{ text[9] }}</pre>
+        </div>
+    </div>
+</div>
+<a href="{{ url_for('corpus_list') }}" class="btn btn-secondary mt-3">← Назад к списку</a>
+<a href="{{ url_for('edit_text', text_id=text[0]) }}" class="btn btn-warning mt-3">✏️ Редактировать</a>
+{% endblock %}
