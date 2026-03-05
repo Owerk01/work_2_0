@@ -13,12 +13,14 @@
     </div>
     <div class="card-body">
         <h5>Содержимое текста:</h5>
+        <!-- Добавлен id для поиска через JS -->
         <div id="text-content" class="border p-3 bg-light" style="max-height: 600px; overflow-y: auto; position: relative;">
             <pre id="text-pre" style="white-space: pre-wrap;">{{ text[9] }}</pre>
         </div>
     </div>
 </div>
 
+<!-- Скрипт подсветки и прокрутки -->
 {% if highlight_pos is not none %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -27,30 +29,44 @@ document.addEventListener('DOMContentLoaded', function() {
     const content = preElement.textContent;
     
     if (pos >= 0 && pos < content.length) {
-        const textBefore = content.substring(0, pos);
-        const lines = textBefore.split('\n');
-        const lineNumber = lines.length - 1;
+        // Находим границы слова вокруг позиции
+        let wordStart = pos;
+        let wordEnd = pos;
         
-        const lineHeight = 24; 
+        // Ищем начало слова (движемся назад до границы слова)
+        while (wordStart > 0 && /\w/.test(content[wordStart - 1])) {
+            wordStart--;
+        }
+        
+        // Ищем конец слова (движемся вперёд до границы слова)
+        while (wordEnd < content.length && /\w/.test(content[wordEnd])) {
+            wordEnd++;
+        }
+        
+        // Извлекаем слово
+        const word = content.substring(wordStart, wordEnd);
+        
+        // Создаём HTML с подсветкой только этого слова
+        const before = content.substring(0, wordStart);
+        const after = content.substring(wordEnd);
+        
+        // Экранируем HTML спецсимволы для безопасности
+        const escapeHtml = (text) => {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        };
+        
+        preElement.innerHTML = escapeHtml(before) + '<mark style="background-color: #ffeb3b; padding: 2px 4px; border-radius: 2px;">' + escapeHtml(word) + '</mark>' + escapeHtml(after);
+        
+        // Прокрутка к позиции
+        const lineHeight = 24;
+        const textBefore = content.substring(0, pos);
+        const lineNumber = textBefore.split('\n').length - 1;
         const scrollPos = lineNumber * lineHeight;
         
         const container = document.getElementById('text-content');
-        container.scrollTop = Math.max(0, scrollPos - 100); 
-        
-        const originalBg = preElement.style.backgroundColor;
-        preElement.style.backgroundColor = '#fff3cd'; 
-        
-        setTimeout(() => {
-            preElement.style.backgroundColor = originalBg;
-        }, 2000);
-        
-        const alert = document.createElement('div');
-        alert.className = 'alert alert-info position-absolute top-0 start-50 translate-middle-x mt-2';
-        alert.style.zIndex = '1000';
-        alert.textContent = 'Вхождение подсвечено!';
-        document.getElementById('text-content').appendChild(alert);
-        
-        setTimeout(() => alert.remove(), 2000);
+        container.scrollTop = Math.max(0, scrollPos - 100);
     }
 });
 </script>
