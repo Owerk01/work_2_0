@@ -1,82 +1,83 @@
+from data import DBsql
 import spacy
 import time
 from data import DB, DB_NAME
 
-# Тут можешь его расширять
+ROOT_IDX = -1
+
 class SQLhelper:
     def __init__(self)->None:
-        self.db = DB()
-
-    def select_all(self) -> list[tuple]:
-        return self.db.select_query(f"SELECT * from {DB_NAME}")
-    
-    def insert_records(self, values:list[tuple])->None:
-        for v in values:
-            self.db.execute_query(f"INSERT OR IGNORE INTO {DB_NAME} (lemma, form, part_of_speech, role) VALUES (?, ?, ?, ?)", v)
-
-    def insert(self, lemma:str, form:str, pos:str, role:str)->None:
-        self.db.execute_query(
-            f"INSERT OR IGNORE INTO {DB_NAME} (lemma, form, part_of_speech, role) VALUES (?, ?, ?, ?)",
-            (lemma, form, pos, role)
-        )
-    
-    # По айди
-    def update(self, id:int, lemma:str, form:str, pos:str, role:str)->None:
-        self.db.execute_query(
-            f"UPDATE {DB_NAME} SET lemma = ?, form = ?, part_of_speech = ?, role = ? WHERE id = ?",
-            (lemma, form, pos, role, id)
-        )
-
-    def get_by_id(self, id: int):
-        result = self.db.select_query(
-            f"SELECT * FROM {DB_NAME} WHERE id = ?",
-            (id,)
-        )
-        return result[0] if result else None
-
-    def search(self, lemma=None, form=None, pos=None, role=None, id=None):
-        conditions = []
-        params = []
-
-        if lemma:
-            conditions.append("lemma LIKE ?")
-            params.append(f"%{lemma}%")
-        if form:
-            conditions.append("form LIKE ?")
-            params.append(f"%{form}%")
-        if pos:
-            conditions.append("part_of_speech LIKE ?")
-            params.append(f"%{pos}%")
-        if role:
-            conditions.append("role LIKE ?")
-            params.append(f"%{role}%")
-        if id is not None: 
-            conditions.append("id = ?")
-            params.append(id)
-
-        query = f"SELECT * FROM {DB_NAME}"
-        if conditions:
-            query += " WHERE " + " AND ".join(conditions)
-
-        return self.db.select_query(query, tuple(params))
-
-    def delete(self, id:int)->None:
-        self.db.execute_query(f"DELETE FROM {DB_NAME} WHERE id = ?", (id,))
+        self.db = DBsql()
 
     def save_parsing_stat(self, word_count: int, duration: float) -> None:
         self.db.execute_query(
-            "INSERT INTO parsing_stats (word_count, duration) VALUES (?, ?)",
+            f"INSERT INTO {DB_NAME} (word_count, duration) VALUES (?, ?)",
             (word_count, duration)
         )
 
     def get_all_stats(self) -> list[tuple]:
-        return self.db.select_query("SELECT word_count, duration, timestamp FROM parsing_stats ORDER BY timestamp")
+        return self.db.select_query(f"SELECT word_count, duration, timestamp FROM {DB_NAME} ORDER BY timestamp")
 
 class Parser:
 
     def __init__(self) -> None:
         self.nlp = spacy.load("en_core_web_sm")
         self.sql = SQLhelper()
+    
+    def get_tag_rus(self, tag: str) -> str:
+        tag_map = {
+            "$": "Символ (валюта)",
+            "''": "Закрывающая кавычка",
+            ",": "Запятая",
+            "-LRB-": "Открывающая круглая скобка",
+            "-RRB-": "Закрывающая круглая скобка",
+            ".": "Точка (конец предложения)",
+            ":": "Двоеточие или многоточие",
+            "ADD": "Email адрес",
+            "AFX": "Аффикс",
+            "CC": "Сочинительный союз",
+            "CD": "Количественное числительное",
+            "DT": "Определитель (арт., указ. мест.)",
+            "EX": "Конструкция 'there is/are'",
+            "FW": "Иностранное слово",
+            "HYPH": "Дефис",
+            "IN": "Подчинительный союз или предлог",
+            "JJ": "Прилагательное",
+            "JJR": "Прилагательное, сравнительная степень",
+            "JJS": "Прилагательное, превосходная степень",
+            "LS": "Маркер списка",
+            "MD": "Модальный глагол (can, will...)",
+            "NFP": "Избыточная пунктуация",
+            "NN": "Существительное, ед. ч. или неисчислимое",
+            "NNP": "Имя собственное, ед. ч.",
+            "NNPS": "Имя собственное, мн. ч.",
+            "NNS": "Существительное, мн. ч.",
+            "PDT": "Предeterminer (предшествующий определитель)",
+            "POS": "Притяжательный аффикс ('s)",
+            "PRP": "Личное местоимение",
+            "PRP$": "Притяжательное местоимение",
+            "RB": "Наречие",
+            "RBR": "Наречие, сравнительная степень",
+            "RBS": "Наречие, превосходная степень",
+            "RP": "Частица (фразовый глагол)",
+            "SYM": "Символ",
+            "TO": "Частица 'to' (инфинитив)",
+            "UH": "Междометие",
+            "VB": "Глагол, базовая форма",
+            "VBD": "Глагол, прошедшее время",
+            "VBG": "Глагол, герундий или причастие наст. вр.",
+            "VBN": "Глагол, причастие прош. вр.",
+            "VBP": "Глагол, наст. вр. (кроме 3-го лица ед.ч.)",
+            "VBZ": "Глагол, наст. вр., 3-е лицо ед.ч.",
+            "WDT": "Wh-определитель (which, that...)",
+            "WP": "Wh-местоимение (who, what...)",
+            "WP$": "Wh-притяжательное местоимение (whose)",
+            "WRB": "Wh-наречие (where, when...)",
+            "XX": "Неизвестный тег",
+            "_SP": "Пробел",
+            "``": "Открывающая кавычка"
+        }
+        return tag_map.get(tag, f"Неизвестно ({tag})")
     
     def get_pos_rus(self, pos_: str) -> str:
         pos_map = {
@@ -158,50 +159,61 @@ class Parser:
 
         start_time = time.time()
         doc = self.nlp(text)
-        records: list[tuple] = []
+        records = []
 
-        for token in doc:
-            if (
-                token.is_punct or
-                token.is_space or
-                token.is_bracket or
-                token.like_url or
-                token.like_email or
-                token.like_num or
-                not token.text.strip()
-            ):
-                continue
+        for i,sent in enumerate(doc.sents):
+            sentence_data = {
+                "sentence_id": i,
+                "text": sent.text,
+                "deps": []
+            }
 
-            form = token.text.lower().strip()
-            lemma = token.lemma_.lower().strip()
+            for token in sent:
+                if (
+                    token.like_url or
+                    token.like_email or
+                    token.like_num or
+                    not token.text.strip()
+                ):
+                    continue
 
-            if lemma == "-pron-":
-                lemma = form
+                form = token.text.lower().strip()
+                lemma = token.lemma_.lower().strip()
 
-            if not form.isalpha() or not lemma.isalpha():
-                continue
+                if lemma == "-pron-":
+                    lemma = form
 
-            if len(form) > 31 or len(lemma) > 31:
-                continue
+                if not form.isalpha() or not lemma.isalpha():
+                    continue
 
-            pos = self.get_pos_rus(token.pos_)
-            role = self.get_dep_rus(token.dep_)
+                pos = self.get_pos_rus(token.pos_)
+                role = self.get_dep_rus(token.dep_)
+                tag = self.get_tag_rus(token.tag_)
+                parent_word = token.head.text
 
-            records.append((lemma, form, pos, role))
+                # if (token == (root of sentence tree))
+                if token.head == token:
+                    parent_index_in_sentence = ROOT_IDX
+                else:
+                    parent_index_in_sentence = token.head.i - sent.start
+
+                token_info = {
+                    "token_id": token.i,
+                    "word": form,
+                    "lemma": lemma,
+                    "pos": pos,
+                    "tag": tag,
+                    "dep": role,
+                    "parent_word": parent_word,
+                    "parent_index_in_sentence": parent_index_in_sentence
+                }
+                sentence_data["deps"] = token_info
+                
+            records.append(sentence_data)
 
         word_count = len(records)
-        if records:
-            self.sql.insert_records(records)
 
         duration = time.time() - start_time
-        # Сохраняем статистику
         self.sql.save_parsing_stat(word_count, duration)
 
         return word_count, duration
-
-# tests = "These are my super tests, I guess. Let's check it out! Words are: run, running, ran."
-# Использование:
-# prs = Parser()
-# prs.parse(tests)
-# print(prs.sql.select_all())
-
