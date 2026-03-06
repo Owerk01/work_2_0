@@ -1,39 +1,85 @@
 from datetime import datetime
 import spacy
-import time
-from data import DBsql, DB_NAME, DB_DIR
+import time, os
+from data import DB, DB_NAME, DB_DIR, STATS_DB
 from data import SentenceData, TokenData, TextData
+from pydantic import ValidationError
 
 ROOT_IDX = -1
 
 class SQLhelper:
     def __init__(self)->None:
-        self.db = DBsql()
+        self.db = DB()
+    
+    def save_analysis(self, name: str, filename: str, sent_count: int) -> None:
+        self.db.execute_query(
+            f"INSERT INTO {DB_NAME} (name, filename, sentence_count) VALUES (?, ?, ?)",
+            (name, filename, sent_count)
+        )
+    
+    def get_all_analysis(self) -> list[tuple]:
+        return self.db.select_query(f"SELECT * FROM {DB_NAME} ORDER BY id")
+    
+    def get_analysis_filename_by_id(self, id: int) -> str:
+        return self.db.select_query(f"SELECT filename FROM {DB_NAME} WHERE id = ?", (id,))
+    
+    def delete_analysis_by_id(self, id: int) -> None:
+        self.db.select_query(f"DELETE FROM {DB_NAME} WHERE id = ?", (id,))
 
     def save_parsing_stat(self, word_count: int, duration: float) -> None:
         self.db.execute_query(
-            f"INSERT INTO {DB_NAME} (word_count, duration) VALUES (?, ?)",
+            f"INSERT INTO {STATS_DB} (word_count, duration) VALUES (?, ?)",
             (word_count, duration)
         )
 
     def get_all_stats(self) -> list[tuple]:
-        return self.db.select_query(f"SELECT word_count, duration, timestamp FROM {DB_NAME} ORDER BY timestamp")
+        return self.db.select_query(f"SELECT word_count, duration, timestamp FROM {STATS_DB} ORDER BY timestamp")
 
-class JSONhelper:
+class DBManager:
     def __init__(self)->None:
-        pass
-    def save_to_file(self, text:TextData)->None:
+        self.sql = SQLhelper()
+
+    def save_to_file(self, text: TextData, name: str) -> None:
         json_data = text.model_dump_json(indent=4, exclude_none=True)
-        with open(f"{DB_DIR}/analysis_result_{datetime.now().isoformat()}.json", "w", encoding="utf-8") as f:
+        filename = f"analysis_{datetime.now().isoformat()}.json"
+
+        with open(f"{DB_DIR}/{filename}", "w", encoding="utf-8") as f:
             f.write(json_data)
-        print(f"(?) Saved file: analysis_result_{datetime.now().isoformat()}.json")
+        print(f"(?) Saved file: {filename}")
+        
+        self.sql.save_analysis(name, filename, len(text.sentences))
+    
+    def load_from_file(self, filepath: str) -> TextData | None:
+        try:
+            with open(filepath, "r", encoding="utf-8") as f:
+                json_content = f.read()
+            data = TextData.model_validate_json(json_content)
+            return data
+
+        except ValidationError as e:
+            print(f"(!) Incorrect file structure: {e}")
+            return None
+        except FileNotFoundError:
+            print("(!) File not found")
+            return None
+    
+    def get_analysis_text(self, id: int) -> str:
+        filename = self.sql.get_analysis_filename_by_id(id)
+        data_obj = self.load_from_file(f"{DB_DIR}/{filename}")
+        text = " ".join(s.text for s in data_obj.sentences)
+        return text
+    
+    def delete_analysis_text(self, id: int) -> None:
+        filename = self.sql.get_analysis_filename_by_id(id)
+        self.sql.delete_analysis_by_id(id)
+        os.remove(f"{DB_DIR}/{filename}")
+        print(f"(?) Removed file {filename}")
 
 
 class Parser:
     def __init__(self) -> None:
         self.nlp = spacy.load("en_core_web_sm")
-        self.sql = SQLhelper()
-        self.pyd_json = JSONhelper()
+        self.manager = DBManager()
     
     def get_tag_rus(self, tag: str) -> str:
         tag_map = {
@@ -113,7 +159,6 @@ class Parser:
         }
         return pos_map.get(pos_.upper(), f"Неизвестно ({pos_})")
 
-
     def get_dep_rus(self, dep_: str) -> str:
         dep_map = {
         "root": "Корень предложения",
@@ -164,7 +209,7 @@ class Parser:
         }
         return dep_map.get(dep_.lower(), f"Неизвестно ({dep_})")
 
-    def parse(self, text: str) -> tuple[int, float]:
+    def parse(self, text: str, name: str) -> tuple[int, float]:
 
         if not text.strip():
             return 0, 0.0
@@ -205,7 +250,7 @@ class Parser:
                 if token.head == token:
                     parent_index_in_sentence = ROOT_IDX
                 else:
-                    parent_index_in_sentence = token.head.i - sent.start
+                    parent_index_in_sentence = token.head.i #- sent.start
 
                 token_obj = TokenData(
                     id=token.i,
@@ -232,11 +277,9 @@ class Parser:
             },
             sentences=sentences
         )
-        self.pyd_json.save_to_file(text_data)
+
+        self.manager.save_to_file(text_data, name)
         duration = time.time() - start_time
-        self.sql.save_parsing_stat(word_count, duration)
+        self.manager.sql.save_parsing_stat(word_count, duration)
 
         return word_count, duration
-
-test = Parser()
-test.parse("Very cool sentence of mine.")
