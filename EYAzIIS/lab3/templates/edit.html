@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>{{ "Редактировать запись" if entry else "Добавить новую запись" }}</h2>
+
+<form method="POST">
+    <input type="hidden" name="id" value="{{ entry[0] if entry else '' }}">
+    <div class="mb-3">
+        <label class="form-label">Лемма *</label>
+        <input type="text" name="lemma" class="form-control" value="{{ entry[1] if entry else '' }}" required>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Форма *</label>
+        <input type="text" name="form" class="form-control" value="{{ entry[2] if entry else '' }}" required>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Часть речи</label>
+        <input type="text" name="pos" class="form-control" value="{{ entry[3] if entry else '' }}">
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Синтаксическая роль</label>
+        <input type="text" name="role" class="form-control" value="{{ entry[4] if entry else '' }}">
+    </div>
+    <button type="submit" class="btn btn-success">Сохранить</button>
+    <a href="{{ url_for('browse') }}" class="btn btn-secondary">Отмена</a>
+</form>
+{% endblock %}
