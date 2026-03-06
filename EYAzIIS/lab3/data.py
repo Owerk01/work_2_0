@@ -1,5 +1,8 @@
 import sqlite3 as sql
 import os
+from pydantic import BaseModel, Field
+from typing import List
+from datetime import datetime
 
 BASE_DIR = os.path.dirname(__file__)
 DB_DIR = os.path.join(BASE_DIR, "DB")
@@ -11,7 +14,7 @@ class DBsql:
         if not os.path.exists(DB_DIR):
             os.mkdir(DB_DIR)
             print(f"(?) Created folder {DB_DIR}/")
-            
+
         self.conn = sql.connect(DATABASE)
         self.crs = self.conn.cursor()
 
@@ -58,3 +61,21 @@ class DBsql:
 
         return data
         
+class TokenData(BaseModel):
+    id: int
+    word: str
+    lemma: str
+    #pos: str
+    tag: str
+    dep: str
+    parent_word: str
+    parent_id: int
+
+class SentenceData(BaseModel):
+    id: int
+    text: str
+    tokens: List[TokenData]
+
+class TextData(BaseModel):
+    meta: dict
+    sentences: List[SentenceData]

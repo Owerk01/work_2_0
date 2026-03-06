@@ -1,7 +1,8 @@
-from data import DBsql
+from datetime import datetime
 import spacy
 import time
-from data import DB, DB_NAME
+from data import DBsql, DB_NAME, DB_DIR
+from data import SentenceData, TokenData, TextData
 
 ROOT_IDX = -1
 
@@ -18,11 +19,21 @@ class SQLhelper:
     def get_all_stats(self) -> list[tuple]:
         return self.db.select_query(f"SELECT word_count, duration, timestamp FROM {DB_NAME} ORDER BY timestamp")
 
-class Parser:
+class JSONhelper:
+    def __init__(self)->None:
+        pass
+    def save_to_file(self, text:TextData)->None:
+        json_data = text.model_dump_json(indent=4, exclude_none=True)
+        with open(f"{DB_DIR}/analysis_result_{datetime.now().isoformat()}.json", "w", encoding="utf-8") as f:
+            f.write(json_data)
+        print(f"(?) Saved file: analysis_result_{datetime.now().isoformat()}.json")
 
+
+class Parser:
     def __init__(self) -> None:
         self.nlp = spacy.load("en_core_web_sm")
         self.sql = SQLhelper()
+        self.pyd_json = JSONhelper()
     
     def get_tag_rus(self, tag: str) -> str:
         tag_map = {
@@ -105,7 +116,7 @@ class Parser:
 
     def get_dep_rus(self, dep_: str) -> str:
         dep_map = {
-        "ROOT": "Корень предложения",
+        "root": "Корень предложения",
         "acl": "Придаточное определительное",
         "acomp": "Придаточное дополнительное (прил.)",
         "advcl": "Обстоятельственное придаточное",
@@ -154,19 +165,18 @@ class Parser:
         return dep_map.get(dep_.lower(), f"Неизвестно ({dep_})")
 
     def parse(self, text: str) -> tuple[int, float]:
+
         if not text.strip():
             return 0, 0.0
 
         start_time = time.time()
         doc = self.nlp(text)
-        records = []
+        sentences = []
+        word_count = 0
 
         for i,sent in enumerate(doc.sents):
-            sentence_data = {
-                "sentence_id": i,
-                "text": sent.text,
-                "deps": []
-            }
+
+            tokens = []
 
             for token in sent:
                 if (
@@ -186,8 +196,8 @@ class Parser:
                 if not form.isalpha() or not lemma.isalpha():
                     continue
 
-                pos = self.get_pos_rus(token.pos_)
-                role = self.get_dep_rus(token.dep_)
+                #pos = self.get_pos_rus(token.pos_)
+                role = self.get_dep_rus(token.dep_.lower())
                 tag = self.get_tag_rus(token.tag_)
                 parent_word = token.head.text
 
@@ -197,23 +207,36 @@ class Parser:
                 else:
                     parent_index_in_sentence = token.head.i - sent.start
 
-                token_info = {
-                    "token_id": token.i,
-                    "word": form,
-                    "lemma": lemma,
-                    "pos": pos,
-                    "tag": tag,
-                    "dep": role,
-                    "parent_word": parent_word,
-                    "parent_index_in_sentence": parent_index_in_sentence
-                }
-                sentence_data["deps"] = token_info
-                
-            records.append(sentence_data)
+                token_obj = TokenData(
+                    id=token.i,
+                    word=form,
+                    lemma=lemma,
+                    #pos=pos,
+                    tag=tag,
+                    dep=role,
+                    parent_word=parent_word,
+                    parent_id=parent_index_in_sentence
+                )
+                tokens.append(token_obj)
+                word_count += 1
+            
+            sent_obj= SentenceData(id=i, text=sent.text, tokens=tokens)
+            sentences.append(sent_obj)
 
-        word_count = len(records)
-
+        text_data = TextData(
+            meta={
+                "language": "English",
+                "model_used": "en_core_web_sm",
+                "processed_at": datetime.now().isoformat(),
+                "total_sentences": len(sentences)
+            },
+            sentences=sentences
+        )
+        self.pyd_json.save_to_file(text_data)
         duration = time.time() - start_time
         self.sql.save_parsing_stat(word_count, duration)
 
         return word_count, duration
+
+test = Parser()
+test.parse("Very cool sentence of mine.")
