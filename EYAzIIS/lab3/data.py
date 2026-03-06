@@ -78,7 +78,6 @@ class DB:
 class TokenData(BaseModel):
     id: int
     word: str
-    lemma: str
     tag: str
     dep: str
     parent_word: str

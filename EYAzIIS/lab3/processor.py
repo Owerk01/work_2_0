@@ -20,11 +20,16 @@ class SQLhelper:
     def get_all_analysis(self) -> list[tuple]:
         return self.db.select_query(f"SELECT * FROM {DB_NAME} ORDER BY id")
     
-    def get_analysis_filename_by_id(self, id: int) -> str:
-        return self.db.select_query(f"SELECT filename FROM {DB_NAME} WHERE id = ?", (id,))
-    
+    def get_analysis_filename_by_id(self, id: int) -> str | None:
+        result = self.db.select_query(f"SELECT filename FROM {DB_NAME} WHERE id = ?", (id,))
+        return result[0][0] if result else None
+
+    def get_text_name_by_id(self, id: int) -> str | None:
+        result = self.db.select_query(f"SELECT name FROM {DB_NAME} WHERE id = ?", (id,))
+        return result[0][0] if result else None    
+
     def delete_analysis_by_id(self, id: int) -> None:
-        self.db.select_query(f"DELETE FROM {DB_NAME} WHERE id = ?", (id,))
+        self.db.execute_query(f"DELETE FROM {DB_NAME} WHERE id = ?", (id,))
 
     def save_parsing_stat(self, word_count: int, duration: float) -> None:
         self.db.execute_query(
@@ -41,7 +46,8 @@ class DBManager:
 
     def save_to_file(self, text: TextData, name: str) -> None:
         json_data = text.model_dump_json(indent=4, exclude_none=True)
-        filename = f"analysis_{datetime.now().isoformat()}.json"
+        timestmp = datetime.now().isoformat().replace('-', '').replace(':', '').replace('.', '').replace('T', '')
+        filename = f"analysis_{timestmp}.json"
 
         with open(f"{DB_DIR}/{filename}", "w", encoding="utf-8") as f:
             f.write(json_data)
@@ -63,18 +69,35 @@ class DBManager:
             print("(!) File not found")
             return None
     
-    def get_analysis_text(self, id: int) -> str:
+    def get_analysis_text(self, id: int) -> str | None:
         filename = self.sql.get_analysis_filename_by_id(id)
-        data_obj = self.load_from_file(f"{DB_DIR}/{filename}")
-        text = " ".join(s.text for s in data_obj.sentences)
-        return text
+        if filename != None:
+            data_obj = self.load_from_file(f"{DB_DIR}/{filename}")
+            text = " ".join(s.text for s in data_obj.sentences)
+            return text
+        else:
+            return None
     
     def delete_analysis_text(self, id: int) -> None:
         filename = self.sql.get_analysis_filename_by_id(id)
-        self.sql.delete_analysis_by_id(id)
-        os.remove(f"{DB_DIR}/{filename}")
-        print(f"(?) Removed file {filename}")
-
+        if filename != None:
+            self.sql.delete_analysis_by_id(id)
+            os.remove(f"{DB_DIR}/{filename}")
+            print(f"(?) Removed file {filename}")
+        else:
+            print("(!) File not found")
+            
+    def get_tree(self, id: int) -> None:
+        filename = self.sql.get_analysis_filename_by_id(id)
+        if filename != None:
+            data_obj = self.load_from_file(f"{DB_DIR}/{filename}")
+            sentences: list = data_obj.model_dump()["sentences"]
+            trees = []
+            for sent in sentences:
+                trees.append(sent["tokens"])
+            return trees
+        else:
+            return None
 
 class Parser:
     def __init__(self) -> None:
@@ -135,29 +158,6 @@ class Parser:
             "``": "Открывающая кавычка"
         }
         return tag_map.get(tag, f"Неизвестно ({tag})")
-    
-    def get_pos_rus(self, pos_: str) -> str:
-        pos_map = {
-            "ADJ": "Прилагательное",
-            "ADP": "Предлог",
-            "ADV": "Наречие",
-            "AUX": "Вспомогательный глагол",
-            "CCONJ": "Сочинительный союз",
-            "DET": "Определитель",
-            "INTJ": "Междометие",
-            "NOUN": "Существительное",
-            "NUM": "Числительное",
-            "PART": "Частица",
-            "PRON": "Местоимение",
-            "PROPN": "Имя собственное",
-            "PUNCT": "Пунктуация",
-            "SCONJ": "Подчинительный союз",
-            "SYM": "Символ",
-            "VERB": "Глагол",
-            "X": "Другое",
-            "SPACE": "Пробел"
-        }
-        return pos_map.get(pos_.upper(), f"Неизвестно ({pos_})")
 
     def get_dep_rus(self, dep_: str) -> str:
         dep_map = {
@@ -233,15 +233,6 @@ class Parser:
                     continue
 
                 form = token.text.lower().strip()
-                lemma = token.lemma_.lower().strip()
-
-                if lemma == "-pron-":
-                    lemma = form
-
-                if not form.isalpha() or not lemma.isalpha():
-                    continue
-
-                #pos = self.get_pos_rus(token.pos_)
                 role = self.get_dep_rus(token.dep_.lower())
                 tag = self.get_tag_rus(token.tag_)
                 parent_word = token.head.text
@@ -255,8 +246,6 @@ class Parser:
                 token_obj = TokenData(
                     id=token.i,
                     word=form,
-                    lemma=lemma,
-                    #pos=pos,
                     tag=tag,
                     dep=role,
                     parent_word=parent_word,
@@ -283,3 +272,9 @@ class Parser:
         self.manager.sql.save_parsing_stat(word_count, duration)
 
         return word_count, duration
+
+# a = Parser()
+# a.parse("A very short sentence.", "Mine")
+# print(a.manager.sql.get_all_analysis())
+# my_id = input("here: ")
+# print(a.manager.get_tree(int(my_id)))
