@@ -1,27 +1,32 @@
 {% extends "base.html" %}
-
 {% block content %}
-<h2>{{ "Редактировать запись" if entry else "Добавить новую запись" }}</h2>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Редактирование анализа {{ text_name }}</h2>
+    <a href="{{ url_for('view', id=analysis_id) }}" class="btn btn-secondary">← Назад</a>
+</div>
+
+<div class="alert alert-warning">
+    <strong>Внимание!</strong> Изменение текста приведёт к его повторному синтаксическому анализу.
+    Старый файл будет заменён новым.
+</div>
 
 <form method="POST">
-    <input type="hidden" name="id" value="{{ entry[0] if entry else '' }}">
     <div class="mb-3">
-        <label class="form-label">Лемма *</label>
-        <input type="text" name="lemma" class="form-control" value="{{ entry[1] if entry else '' }}" required>
+        <label class="form-label">Название анализа *</label>
+        <input type="text" name="name" class="form-control" value="{{ text_name }}" required>
     </div>
+    
     <div class="mb-3">
-        <label class="form-label">Форма *</label>
-        <input type="text" name="form" class="form-control" value="{{ entry[2] if entry else '' }}" required>
+        <label class="form-label">Содержимое текста *</label>
+        <textarea name="text" class="form-control" rows="10" required>{{ current_text }}</textarea>
     </div>
-    <div class="mb-3">
-        <label class="form-label">Часть речи</label>
-        <input type="text" name="pos" class="form-control" value="{{ entry[3] if entry else '' }}">
+    
+    <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-success">
+            <i class="bi bi-check-lg"></i> Сохранить изменения
+        </button>
+        <a href="{{ url_for('view', id=analysis_id) }}" class="btn btn-secondary">Отмена</a>
     </div>
-    <div class="mb-3">
-        <label class="form-label">Синтаксическая роль</label>
-        <input type="text" name="role" class="form-control" value="{{ entry[4] if entry else '' }}">
-    </div>
-    <button type="submit" class="btn btn-success">Сохранить</button>
-    <a href="{{ url_for('browse') }}" class="btn btn-secondary">Отмена</a>
 </form>
+
 {% endblock %}

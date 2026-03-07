@@ -15,7 +15,7 @@ class DB:
             os.mkdir(DB_DIR)
             print(f"(?) Created folder {DB_DIR}/")
 
-        self.conn = sql.connect(DATABASE)
+        self.conn = sql.connect(DATABASE, check_same_thread=False)
         self.crs = self.conn.cursor()
 
         self.crs.execute(f"""

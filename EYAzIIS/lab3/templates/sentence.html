@@ -1,0 +1,325 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Дерево предложения #{{ sentence_id + 1 }}</h2>
+    <a href="{{ url_for('view', id=analysis_id) }}" class="btn btn-secondary">← Назад</a>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+        <strong>Текст предложения</strong>
+    </div>
+    <div class="card-body">
+        <p class="lead">{{ sentence.text }}</p>
+    </div>
+</div>
+
+<h3 class="mb-3">Визуализация дерева зависимостей</h3>
+<div class="card mb-4">
+    <div class="card-body">
+        <div id="tree-container" style="overflow: auto; min-height: 500px; border: 1px solid #dee2e6; border-radius: 4px;">
+            <svg id="dependency-tree"></svg>
+        </div>
+        <div class="mt-2 text-muted small">
+            Используйте колёсико мыши для масштабирования, двигайте рабочую область и перетаскивайте узлы левой кнопкой мыши
+        </div>
+    </div>
+</div>
+
+<h3 class="mb-3">Структура дерева</h3>
+<div class="card">
+    <div class="card-body" id="tree-structure"></div>
+</div>
+
+<h3 class="mt-4 mb-3">Таблица токенов</h3>
+<table class="table table-sm table-bordered">
+    <thead class="table-light">
+        <tr>
+            <th>ID</th>
+            <th>Слово</th>
+            <th>Часть речи</th>
+            <th>Синтаксическая роль</th>
+            <th>Родитель</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for token in sentence.tokens %}
+        <tr>
+            <td>{{ token.id }}</td>
+            <td><strong>{{ token.word }}</strong></td>
+            <td>{{ token.tag }}</td>
+            <td>{{ token.dep }}</td>
+            <td>{{ token.parent_word }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="https://unpkg.com/d3-graphviz@3.2.0/build/d3-graphviz.min.js"></script>
+<script>
+const tokens = [
+    {% for token in sentence.tokens %}
+    {
+        id: {{ token.id }},
+        word: "{{ token.word }}",
+        tag: "{{ token.tag }}",
+        dep: "{{ token.dep }}",
+        parent_id: {{ token.parent_id }}
+    }{% if not loop.last %},{% endif %}
+    {% endfor %}
+];
+
+function drawTree() {
+    const container = document.getElementById('tree-container');
+    const width = container.clientWidth || 1200;
+    const height = 600;
+    
+    const svg = d3.select("#dependency-tree")
+        .attr("width", width)
+        .attr("height", height);
+    
+    svg.selectAll("*").remove();
+    
+    const tokenMap = new Map(tokens.map(t => [t.id, t]));
+    
+    const roots = tokens.filter(t => t.parent_id === -1);
+    const root = roots.length > 0 ? roots[0] : tokens[0];
+    
+    function buildHierarchy(rootToken, allTokens, visited = new Set()) {
+        if (visited.has(rootToken.id)) {
+            return null; 
+        }
+        visited.add(rootToken.id);
+        
+        const node = {
+            ...rootToken,
+            children: []
+        };
+        
+        const children = allTokens.filter(t => t.parent_id === rootToken.id);
+        children.forEach(child => {
+            const childNode = buildHierarchy(child, allTokens, visited);
+            if (childNode) {
+                node.children.push(childNode);
+            }
+        });
+        
+        return node;
+    }
+    
+    const visited = new Set();
+    const hierarchy = buildHierarchy(root, tokens, visited);
+    
+    const unreachableTokens = tokens.filter(t => !visited.has(t.id));
+    
+    let finalHierarchy = hierarchy;
+    if (unreachableTokens.length > 0 && hierarchy) {
+        unreachableTokens.forEach(token => {
+            hierarchy.children.push({
+                ...token,
+                children: [],
+                _unreachable: true
+            });
+        });
+    } else if (!hierarchy && unreachableTokens.length > 0) {
+        finalHierarchy = {
+            id: -999,
+            word: "ROOT",
+            tag: "",
+            dep: "Корень",
+            parent_id: -1,
+            children: unreachableTokens.map(t => ({...t, children: []}))
+        };
+    }
+    
+    const treeLayout = d3.tree()
+        .size([width - 100, height - 150])
+        .separation((a, b) => a.parent == b.parent ? 1.5 : 1);
+    
+    const root_d3 = d3.hierarchy(finalHierarchy);
+    treeLayout(root_d3);
+    
+    const g = svg.append("g")
+        .attr("transform", "translate(50, 80)");
+    const zoom = d3.zoom()
+        .scaleExtent([0.3, 2])
+        .on("zoom", (event) => {
+            g.attr("transform", event.transform);
+        });
+    
+    svg.call(zoom);
+    
+    const links = root_d3.links().filter(link => 
+        link.source.data.id !== -999
+    );
+    
+    const link = g.selectAll(".link")
+        .data(links)
+        .enter()
+        .append("path")
+        .attr("class", "link")
+        .attr("d", d3.linkVertical()
+            .x(d => d.x)
+            .y(d => d.y))
+        .attr("fill", "none")
+        .attr("stroke", "#999")
+        .attr("stroke-width", 2);
+    
+    const linkLabels = g.selectAll(".link-label")
+        .data(links)
+        .enter()
+        .append("text")
+        .attr("class", "link-label")
+        .attr("x", d => (d.source.x + d.target.x) / 2)
+        .attr("y", d => (d.source.y + d.target.y) / 2 - 5)
+        .attr("text-anchor", "middle")
+        .attr("fill", "#666")
+        .attr("font-size", "10px")
+        .text(d => d.target.data.dep);
+    
+    const nodes = root_d3.descendants().filter(d => d.data.id !== -999);
+    
+    const node = g.selectAll(".node")
+        .data(nodes)
+        .enter()
+        .append("g")
+        .attr("class", "node")
+        .attr("transform", d => `translate(${d.x},${d.y})`)
+        .call(d3.drag()
+            .on("start", dragstarted)
+            .on("drag", dragged)
+            .on("end", dragended));
+    
+    node.append("rect")
+        .attr("x", -60)
+        .attr("y", -25)
+        .attr("width", 120)
+        .attr("height", 50)
+        .attr("rx", 8)
+        .attr("ry", 8)
+        .attr("fill", d => {
+            if (d.data._unreachable) return "#f8d7da"; 
+            return d.data.parent_id === -1 ? "#fff3cd" : "#d1ecf1";
+        })
+        .attr("stroke", d => {
+            if (d.data._unreachable) return "#dc3545";
+            return d.data.parent_id === -1 ? "#ffc107" : "#17a2b8";
+        })
+        .attr("stroke-width", 2)
+        .attr("cursor", "pointer")
+        .append("title")
+        .text(d => d.data._unreachable ? "Недостижимый токен" : "");
+    
+    node.append("text")
+        .attr("text-anchor", "middle")
+        .attr("y", -5)
+        .attr("font-weight", "bold")
+        .attr("font-size", "13px")
+        .text(d => d.data.word);
+    
+    node.append("text")
+        .attr("text-anchor", "middle")
+        .attr("y", 12)
+        .attr("font-size", "10px")
+        .attr("fill", "#666")
+        .text(d => d.data.tag);
+
+    function dragstarted(event, d) {
+        d3.select(this).select("rect").attr("stroke", "#ff9800").attr("stroke-width", 3);
+    }
+    
+    function dragged(event, d) {
+        d.x = event.x;
+        d.y = event.y;
+        d3.select(this).attr("transform", `translate(${d.x},${d.y})`);
+        
+        link.attr("d", d3.linkVertical()
+            .x(d => d.x)
+            .y(d => d.y));
+        
+        linkLabels
+            .attr("x", d => (d.source.x + d.target.x) / 2)
+            .attr("y", d => (d.source.y + d.target.y) / 2 - 5);
+    }
+    
+    function dragended(event, d) {
+        d3.select(this).select("rect")
+            .attr("stroke", d.data._unreachable ? "#dc3545" : (d.data.parent_id === -1 ? "#ffc107" : "#17a2b8"))
+            .attr("stroke-width", 2);
+    }
+    
+    svg.on("dblclick.zoom", null);
+    svg.on("dblclick", () => {
+        svg.transition().duration(750).call(zoom.transform, d3.zoomIdentity);
+    });
+}
+
+function drawTreeStructure() {
+    const root = tokens.find(t => t.parent_id === -1) || tokens[0];
+    const container = document.getElementById("tree-structure");
+    
+    function buildTreeHtml(token, allTokens, level = 0) {
+        const children = allTokens.filter(t => t.parent_id === token.id);
+        
+        let html = `
+            <div class="tree-node mb-2" style="margin-left: ${level * 30}px; animation: slideIn 0.3s ease-out;">
+                <span class="badge bg-primary me-2 fs-6">${token.word}</span>
+                <span class="badge bg-secondary me-2">${token.tag}</span>
+                <span class="badge bg-info text-dark">${token.dep}</span>
+            </div>
+        `;
+        
+        children.forEach(child => {
+            html += buildTreeHtml(child, allTokens, level + 1);
+        });
+        
+        return html;
+    }
+    
+    container.innerHTML = buildTreeHtml(root, tokens);
+}
+
+const style = document.createElement('style');
+style.textContent = `
+    .tree-node {
+        padding: 8px;
+        border-left: 3px solid #17a2b8;
+        background: #f8f9fa;
+        border-radius: 4px;
+        transition: transform 0.2s;
+    }
+    .tree-node:hover {
+        transform: translateX(5px);
+        background: #e9ecef;
+    }
+    @keyframes slideIn {
+        from { opacity: 0; transform: translateX(-20px); }
+        to { opacity: 1; transform: translateX(0); }
+    }
+    .link {
+        transition: stroke-width 0.2s;
+    }
+    .node:hover rect {
+        filter: brightness(0.9);
+    }
+`;
+document.head.appendChild(style);
+
+setTimeout(() => {
+    drawTree();
+    drawTreeStructure();
+}, 100);
+
+let resizeTimeout;
+window.addEventListener('resize', () => {
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(() => {
+        drawTree();
+        drawTreeStructure();
+    }, 250);
+});
+</script>
+{% endblock %}

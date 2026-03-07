@@ -2,33 +2,40 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>App</title>
-    <link href="{{url_for("static", filename='css/bootstrap.min.css')}}" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Синтаксический анализ текста</title>
+    <link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" rel="stylesheet">
+    <style>
+        .tree-node { margin: 5px 0; padding: 5px; border-left: 2px solid #007bff; }
+        .tree-children { margin-left: 20px; }
+        .token-card { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 5px; padding: 10px; margin: 5px 0; }
+        .sentence-link { cursor: pointer; color: #007bff; text-decoration: underline; }
+        .sentence-link:hover { color: #0056b3; }
+    </style>
 </head>
 <body>
-<div class="container mt-4">
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-                <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show">
-                    {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
+    <div class="container mt-4">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
 
-    <nav class="mb-4">
-        <a class="btn btn-outline-primary" href="{{ url_for('index') }}">Главная</a>
-        <a class="btn btn-outline-info" href="{{ url_for('browse') }}">Просмотреть словарь</a>
-        <a class="btn btn-outline-success" href="{{ url_for('add') }}">Добавить запись</a>
-        <a class="btn btn-outline-secondary" href="{{ url_for('help') }}">Помощь</a>
-        <a class="btn btn-outline-dark" href="{{ url_for('stats') }}">Статистика</a>
-    </nav>
+        <nav class="mb-4">
+            <a class="btn btn-outline-primary" href="{{ url_for('index') }}">Главная</a>
+            <a class="btn btn-outline-info" href="{{ url_for('browse') }}">Список текстов</a>
+            <a class="btn btn-outline-secondary" href="{{ url_for('stats') }}">Статистика</a>
+            <a class="btn btn-outline-dark" href="{{ url_for('help') }}">Помощь</a>
+        </nav>
 
-    {% block content %}{% endblock %}
-</div>
-
-<script src="{{url_for("static", filename='js/bootstrap.bundle.min.js')}}" rel="stylesheet"></script>
+        {% block content %}{% endblock %}
+    </div>
+    <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
+    {% block scripts %}{% endblock %}
 </body>
 </html>

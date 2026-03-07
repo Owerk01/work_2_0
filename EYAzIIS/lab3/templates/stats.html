@@ -1,75 +1,129 @@
 {% extends "base.html" %}
-
 {% block content %}
 <h2 class="mb-4">Статистика производительности</h2>
 
 {% if stats %}
-    <p>Всего записей: {{ stats|length }}</p>
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <h5 class="card-title">Всего анализов</h5>
+                <h2 class="card-text">{{ stats|length }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <h5 class="card-title">Всего слов обработано</h5>
+                <h2 class="card-text">{{ stats|map(attribute=0)|sum }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <h5 class="card-title">Среднее время (сек)</h5>
+                <h2 class="card-text">{{ "%.3f"|format(stats|map(attribute=1)|sum / stats|length if stats|length > 0 else 0) }}</h2>
+            </div>
+        </div>
+    </div>
+</div>
 
-    <!-- График через Chart.js -->
-    <canvas id="perfChart" height="100"></canvas>
+<!-- График -->
+<canvas id="perfChart" height="100" class="mb-4"></canvas>
 
-    <h3 class="mt-4">Данные:</h3>
-    <table class="table table-sm">
-        <thead>
-            <tr>
-                <th>Время</th>
-                <th>Слов</th>
-                <th>Время обработки (сек)</th>
-                <th>Скорость (слов/сек)</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for word_count, duration, ts in stats %}
-            <tr>
-                <td>{{ ts }}</td>
-                <td>{{ word_count }}</td>
-                <td>{{ "%.3f"|format(duration) }}</td>
-                <td>{{ "%.1f"|format(word_count / duration if duration > 0 else 0) }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script>
-        const ctx = document.getElementById('perfChart').getContext('2d');
-        const labels = {{ stats|map(attribute=2)|list|tojson }};
-        const wordCounts = {{ stats|map(attribute=0)|list|tojson }};
-        const durations = {{ stats|map(attribute=1)|list|tojson }};
-
-        new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: labels.map(ts => new Date(ts).toLocaleTimeString()),
-                datasets: [
-                    {
-                        label: 'Количество слов',
-                        data: wordCounts,
-                        borderColor: 'blue',
-                        yAxisID: 'y'
-                    },
-                    {
-                        label: 'Время (сек)',
-                        data: durations,
-                        borderColor: 'red',
-                        yAxisID: 'y1'
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                interaction: { mode: 'index', intersect: false },
-                scales: {
-                    y: { type: 'linear', display: true, position: 'left' },
-                    y1: { type: 'linear', display: true, position: 'right', grid: { drawOnChartArea: false } }
-                }
-            }
-        });
-    </script>
+<h3 class="mt-4">Детальные данные</h3>
+<table class="table table-sm table-striped">
+    <thead>
+        <tr>
+            <th>Время</th>
+            <th>Слов</th>
+            <th>Время обработки (сек)</th>
+            <th>Скорость (слов/сек)</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for word_count, duration, ts in stats %}
+        <tr>
+            <td>{{ ts }}</td>
+            <td>{{ word_count }}</td>
+            <td>{{ "%.3f"|format(duration) }}</td>
+            <td>{{ "%.1f"|format(word_count / duration if duration > 0 else 0) }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
 {% else %}
-    <p>Нет данных. Загрузите хотя бы один текст!</p>
+<div class="alert alert-info">
+    <p>Нет данных статистики. <a href="{{ url_for('index') }}">Обработайте хотя бы один текст</a>!</p>
+</div>
 {% endif %}
 
 <a href="{{ url_for('index') }}" class="btn btn-primary mt-3">← Вернуться на главную</a>
+{% endblock %}
+
+{% block scripts %}
+{% if stats %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+const ctx = document.getElementById('perfChart').getContext('2d');
+const statsData = {{ stats|tojson }};
+
+new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: statsData.map(s => new Date(s[2]).toLocaleTimeString()),
+        datasets: [
+            {
+                label: 'Количество слов',
+                data: statsData.map(s => s[0]),
+                borderColor: 'rgb(75, 192, 192)',
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                yAxisID: 'y',
+                tension: 0.1
+            },
+            {
+                label: 'Время обработки (сек)',
+                data: statsData.map(s => s[1]),
+                borderColor: 'rgb(255, 99, 132)',
+                backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                yAxisID: 'y1',
+                tension: 0.1
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        interaction: {
+            mode: 'index',
+            intersect: false,
+        },
+        scales: {
+            y: {
+                type: 'linear',
+                display: true,
+                position: 'left',
+                title: {
+                    display: true,
+                    text: 'Слов'
+                }
+            },
+            y1: {
+                type: 'linear',
+                display: true,
+                position: 'right',
+                grid: {
+                    drawOnChartArea: false,
+                },
+                title: {
+                    display: true,
+                    text: 'Время (сек)'
+                }
+            },
+        },
+    },
+});
+</script>
+{% endif %}
 {% endblock %}
