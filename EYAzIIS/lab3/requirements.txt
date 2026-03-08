@@ -2,3 +2,6 @@ spacy
 flask
 striprtf
 pydantic
+docx
+pdfplumber
+werkzeug

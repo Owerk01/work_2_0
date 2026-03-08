@@ -4,9 +4,6 @@ import time, os
 from data import DB, DB_NAME, DB_DIR, STATS_DB
 from data import SentenceData, TokenData, TextData
 from pydantic import ValidationError
-from docx import Document
-import pdfplumber
-from striprtf.striprtf import rtf_to_text
 
 ROOT_IDX = -1
 
