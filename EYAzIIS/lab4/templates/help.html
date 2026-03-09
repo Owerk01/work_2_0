@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+{% block content %}
+<h2 class="mb-4">Руководство пользователя</h2>
+<div class="alert alert-info">
+    <strong>Цель системы:</strong> автоматический семантико-синтаксический анализ английских текстов 
+    с построением деревьев зависимостей и определением семантических классов слов.
+</div>
+
+<h3 class="mt-4">1. Загрузка текста</h3>
+<p>На <a href="{{ url_for('index') }}">главной странице</a> вы можете:</p>
+<ul>
+    <li>Вставить английский текст вручную в поле «Текст»</li>
+    <li>Загрузить файл формата <code>.txt</code> или <code>.rtf</code></li>
+    <li>Указать название анализа (необязательно)</li>
+</ul>
+
+<h3 class="mt-4">2. Просмотр результатов</h3>
+<p>На странице <a href="{{ url_for('browse') }}">«Список текстов»</a> отображаются все сохранённые анализы:</p>
+<ul>
+    <li>👁️ <strong>Просмотр</strong> — увидеть список предложений</li>
+    <li>✏️ <strong>Редактировать</strong> — изменить название анализа</li>
+    <li>🗑️ <strong>Удалить</strong> — удалить анализ из базы</li>
+</ul>
+
+<h3 class="mt-4">3. Семантико-синтаксический анализ предложения</h3>
+<p>При просмотре анализа нажмите на любое предложение для просмотра:</p>
+<ul>
+    <li><strong>Текст предложения</strong></li>
+    <li><strong>Дерево зависимостей</strong> — интерактивная визуализация с цветовой кодировкой семантических классов</li>
+    <li><strong>Структура дерева</strong> — иерархическое представление с семантическими метками</li>
+    <li><strong>Таблицу токенов</strong> — полная информация о каждом слове</li>
+    <li><strong>Карточки токенов</strong> — детальная семантическая информация</li>
+</ul>
+
+<h3 class="mt-4">4. Семантические классы</h3>
+<p>Система автоматически определяет семантический класс для каждого слова:</p>
+<div class="row">
+    <div class="col-md-6">
+        <ul>
+            <li><span class="badge bg-warning text-dark">ЖИВОТНОЕ</span> — cat, dog, bird</li>
+            <li><span class="badge bg-danger">ЧЕЛОВЕК</span> — man, woman, he, she</li>
+            <li><span class="badge bg-info">ОБЪЕКТ</span> — table, car, book</li>
+            <li><span class="badge bg-success">ДЕЙСТВИЕ</span> — run, eat, sleep</li>
+            <li><span class="badge bg-primary">СВОЙСТВО</span> — big, red, beautiful</li>
+            <li><span class="badge" style="background-color: #fd7e14; color: white;">ОБСТОЯТЕЛЬСТВО</span> — quickly, very, here</li>
+        </ul>
+    </div>
+    <div class="col-md-6">
+        <ul>
+            <li><span class="badge" style="background-color: #20c997; color: white;">КОЛИЧЕСТВО</span> — 5, many, few</li>
+            <li><span class="badge bg-secondary">ОТНОШЕНИЕ</span> — in, on, and, but</li>
+            <li><span class="badge bg-dark">ПУНКТУАЦИЯ</span> — . , ! ?</li>
+            <li><span class="badge bg-success">ЛОКАЦИЯ</span> — London, Paris, home</li>
+            <li><span class="badge bg-danger">ВРЕМЯ</span> — today, now, yesterday</li>
+            <li><span class="badge bg-primary">ОРГАНИЗАЦИЯ</span> — Google, Microsoft</li>
+        </ul>
+    </div>
+</div>
+
+<h3 class="mt-4">5. Статистика</h3>
+<p>Страница <a href="{{ url_for('stats') }}">«Статистика»</a> показывает:</p>
+<ul>
+    <li>График производительности</li>
+    <li>Количество обработанных слов</li>
+    <li>Время обработки каждого анализа</li>
+    <li>Скорость обработки (слов/сек)</li>
+</ul>
+
+<hr class="my-5">
+
+<h2 class="mb-4">Основные термины</h2>
+<dl class="row">
+    <dt class="col-md-3"><strong>Токен</strong></dt>
+    <dd class="col-md-9">Отдельное слово или знак препинания в тексте.</dd>
+    
+    <dt class="col-md-3"><strong>Лемма</strong></dt>
+    <dd class="col-md-9">Нормальная (словарная) форма слова. Например: <em>running → run</em>, <em>cats → cat</em>.</dd>
+    
+    <dt class="col-md-3"><strong>Часть речи (POS tag)</strong></dt>
+    <dd class="col-md-9">Грамматическая категория слова (существительное, глагол, прилагательное и т.д.).</dd>
+    
+    <dt class="col-md-3"><strong>Синтаксическая роль (Dependency)</strong></dt>
+    <dd class="col-md-9">Функция слова в предложении:
+        <ul>
+            <li><code>Именное подлежащее</code> — подлежащее</li>
+            <li><code>Прямое дополнение</code> — объект действия</li>
+            <li><code>Корень предложения</code> — главный глагол</li>
+            <li><code>Определение</code> — атрибутивное прилагательное</li>
+            <li><code>Обстоятельство</code> — наречный модификатор</li>
+        </ul>
+    </dd>
+    
+    <dt class="col-md-3"><strong>Семантический класс</strong></dt>
+    <dd class="col-md-9">Смысловая категория слова, определяющая его значение:
+        <ul>
+            <li><strong>ЖИВОТНОЕ</strong> — живые существа (кроме людей)</li>
+            <li><strong>ЧЕЛОВЕК</strong> — люди, местоимения лиц</li>
+            <li><strong>ОБЪЕКТ</strong> — предметы, вещи</li>
+            <li><strong>ДЕЙСТВИЕ</strong> — глаголы, процессы</li>
+            <li><strong>СВОЙСТВО</strong> — качества, характеристики</li>
+        </ul>
+    </dd>
+    
+    <dt class="col-md-3"><strong>Именованная сущность (NER)</strong></dt>
+    <dd class="col-md-9">Распознанные объекты реального мира:
+        <ul>
+            <li><strong>PERSON</strong> — имена людей</li>
+            <li><strong>ORG</strong> — организации</li>
+            <li><strong>GPE/LOC</strong> — географические объекты</li>
+            <li><strong>DATE/TIME</strong> — даты и время</li>
+        </ul>
+    </dd>
+    
+    <dt class="col-md-3"><strong>Дерево зависимостей</strong></dt>
+    <dd class="col-md-9">Графическое представление синтаксических связей между словами. 
+        Каждое слово связано с родительским словом направленным отношением.</dd>
+    
+    <dt class="col-md-3"><strong>Семантическая похожесть</strong></dt>
+    <dd class="col-md-9">Числовая мера (от 0 до 1) смысловой близости между словами, 
+        вычисляемая на основе векторных представлений.</dd>
+</dl>
+
+<hr class="my-5">
+
+<h3 class="mt-4">6. Технические возможности</h3>
+<ul>
+    <li><strong>Синтаксический анализ</strong> — определение структуры предложения и грамматических связей</li>
+    <li><strong>Семантическая классификация</strong> — отнесение слов к смысловым категориям</li>
+    <li><strong>Распознавание именованных сущностей (NER)</strong> — автоматическое выявление имён, организаций, локаций</li>
+    <li><strong>Векторная семантика</strong> — вычисление семантической похожести между словами</li>
+    <li><strong>Интерактивная визуализация</strong> — масштабирование, перетаскивание узлов дерева</li>
+    <li><strong>Определение стоп-слов</strong> — маркировка служебных слов</li>
+</ul>
+
+<h3 class="mt-4">7. Технические ограничения</h3>
+<ul>
+    <li>Анализ выполняется только для <strong>английских текстов</strong></li>
+    <li>Поддерживаются файлы <code>.txt</code> и <code>.rtf</code></li>
+    <li>Максимальный размер файла: 16 MB</li>
+    <li>Игнорируются: URL, email, числа, спецсимволы</li>
+    <li>Статистика хранится локально в SQLite</li>
+    <li>Требуется модель spaCy <code>en_core_web_md</code> (с векторами)</li>
+</ul>
+
+<div class="mt-5 p-3 bg-light rounded">
+    <h4>Примеры текстов для тестирования</h4>
+    <p><strong>Простой текст:</strong></p>
+    <blockquote class="blockquote">
+        <p>The cat runs quickly. She loves to play.</p>
+    </blockquote>
+    
+    <p><strong>С именованными сущностями:</strong></p>
+    <blockquote class="blockquote">
+        <p>John works at Microsoft in London. He visited Paris last week.</p>
+    </blockquote>
+    
+    <p><strong>Сложный текст:</strong></p>
+    <blockquote class="blockquote">
+        <p>The beautiful garden bloomed in spring. Many colorful flowers attracted bees and butterflies. 
+        Children played happily near the old fountain.</p>
+    </blockquote>
+</div>
+
+<div class="mt-5 p-3 bg-light rounded">
+    <h4>Возникли проблемы?</h4>
+    <p>Убедитесь, что:</p>
+    <ul>
+        <li>Текст на английском языке</li>
+        <li>Файл не повреждён</li>
+        <li>Установлены все зависимости (spacy, flask, etc.)</li>
+        <li>Загружена модель spaCy: <code>python -m spacy download en_core_web_md</code></li>
+    </ul>
+    <p>Если ошибка остаётся — проверьте консоль на наличие сообщений об ошибках.</p>
+</div>
+
+<a href="{{ url_for('index') }}" class="btn btn-primary mt-3">← Вернуться на главную</a>
+{% endblock %}

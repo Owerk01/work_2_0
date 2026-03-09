@@ -1,0 +1,4 @@
+spacy
+flask
+striprtf
+pydantic

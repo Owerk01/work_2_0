@@ -1,12 +1,123 @@
 from datetime import datetime
 import spacy
-import time, os
+import time
+import os
 from data import DB, DB_NAME, DB_DIR, STATS_DB
 from data import SentenceData, TokenData, TextData
 from pydantic import ValidationError
 
-
 ROOT_IDX = -1
+
+class SemanticAnalyzer:
+    """Семантический анализатор на основе spaCy"""
+    
+    def __init__(self, nlp):
+        self.nlp = nlp
+        
+        self.semantic_classes_ru = {
+            "ANIMAL": "ЖИВОТНОЕ",
+            "PERSON": "ЧЕЛОВЕК",
+            "OBJECT": "ОБЪЕКТ",
+            "ACTION": "ДЕЙСТВИЕ",
+            "PROPERTY": "СВОЙСТВО",
+            "CIRCUMSTANCE": "ОБСТОЯТЕЛЬСТВО",
+            "QUANTITY": "КОЛИЧЕСТВО",
+            "RELATION": "ОТНОШЕНИЕ",
+            "DETERMINER": "ОПРЕДЕЛИТЕЛЬ",
+            "PUNCTUATION": "ПУНКТУАЦИЯ",
+            "ENTITY": "СУЩНОСТЬ",
+            "ORGANIZATION": "ОРГАНИЗАЦИЯ",
+            "LOCATION": "ЛОКАЦИЯ",
+            "TIME": "ВРЕМЯ",
+            "EMOTION": "ЭМОЦИЯ",
+            "OTHER": "ДРУГОЕ",
+            "UNKNOWN": "НЕИЗВЕСТНО"
+        }
+        
+        self.animal_keywords = {
+            'cat', 'dog', 'bird', 'fish', 'horse', 'cow', 'pig', 'sheep',
+            'lion', 'tiger', 'elephant', 'monkey', 'rabbit', 'mouse', 'rat',
+            'animal', 'pet', 'creature', 'mammal', 'beast', 'wolf', 'fox'
+        }
+        
+        self.person_keywords = {
+            'man', 'woman', 'boy', 'girl', 'person', 'people', 'human',
+            'child', 'adult', 'friend', 'mother', 'father', 'parent',
+            'he', 'she', 'they', 'him', 'her', 'them', 'his', 'hers'
+        }
+    
+    def get_semantic_class(self, token) -> str:
+        lemma = token.lemma_.lower()
+        pos = token.pos_
+        tag = token.tag_
+        
+        if token.ent_type_:
+            entity_map = {
+                "PERSON": "ЧЕЛОВЕК",
+                "ORG": "ОРГАНИЗАЦИЯ",
+                "GPE": "ЛОКАЦИЯ",
+                "LOC": "ЛОКАЦИЯ",
+                "PRODUCT": "ОБЪЕКТ",
+                "EVENT": "СОБЫТИЕ",
+                "DATE": "ВРЕМЯ",
+                "TIME": "ВРЕМЯ",
+                "MONEY": "КОЛИЧЕСТВО",
+                "QUANTITY": "КОЛИЧЕСТВО"
+            }
+            return entity_map.get(token.ent_type_, "СУЩНОСТЬ")
+        
+        if lemma in self.animal_keywords:
+            return "ЖИВОТНОЕ"
+        
+        if lemma in self.person_keywords or tag in ["PRP", "PRP$"]:
+            return "ЧЕЛОВЕК"
+        
+        pos_class_map = {
+            "VERB": "ДЕЙСТВИЕ",
+            "AUX": "ДЕЙСТВИЕ",
+            "NOUN": "ОБЪЕКТ",
+            "PROPN": "СУЩНОСТЬ",
+            "PRON": "ЧЕЛОВЕК",
+            "ADJ": "СВОЙСТВО",
+            "ADV": "ОБСТОЯТЕЛЬСТВО",
+            "ADP": "ОТНОШЕНИЕ",
+            "CONJ": "ОТНОШЕНИЕ",
+            "DET": "ОПРЕДЕЛИТЕЛЬ",
+            "NUM": "КОЛИЧЕСТВО",
+            "PUNCT": "ПУНКТУАЦИЯ",
+            "PART": "ОТНОШЕНИЕ",
+            "INTJ": "ЭМОЦИЯ"
+        }
+        
+        return pos_class_map.get(pos, "ДРУГОЕ")
+    
+    def calculate_similarity(self, token1, token2) -> float:
+        try:
+            if token1.has_vector and token2.has_vector:
+                return float(token1.similarity(token2))
+            else:
+                if token1.lemma_.lower() == token2.lemma_.lower():
+                    return 1.0
+                elif token1.pos_ == token2.pos_:
+                    return 0.3
+                else:
+                    return 0.0
+        except:
+            return 0.0
+    
+    def analyze_token_semantics(self, token, root_token=None) -> dict:
+        result = {
+            "semantic_class": self.get_semantic_class(token),
+            "entity_type": token.ent_type_ if token.ent_type_ else "",
+            "is_stop_word": token.is_stop,
+            "similarity_to_root": 0.0
+        }
+        
+        if root_token:
+            result["similarity_to_root"] = self.calculate_similarity(token, root_token)
+        
+        return result
+
 
 class SQLhelper:
     def __init__(self) -> None:
@@ -91,7 +202,7 @@ class DBManager:
         
         self.sql.update_analysis_name(id, new_name)
         self.sql.update_analysis_filename(id, new_filename)
-        self.sql.update_analysis_sentence_count(id, len(text.sentences))
+        self.sql.update_analysis_sentence_count(id, len(text.sentences)) 
         
         return new_filename
     
@@ -110,7 +221,7 @@ class DBManager:
     
     def get_analysis_text(self, id: int) -> str | None:
         filename = self.sql.get_analysis_filename_by_id(id)
-        if filename != None:
+        if filename is not None:
             data_obj = self.load_from_file(f"{DB_DIR}/{filename}")
             text = " ".join(s.text for s in data_obj.sentences)
             return text
@@ -119,7 +230,7 @@ class DBManager:
     
     def delete_analysis_text(self, id: int) -> None:
         filename = self.sql.get_analysis_filename_by_id(id)
-        if filename != None:
+        if filename is not None:
             self.sql.delete_analysis_by_id(id)
             os.remove(f"{DB_DIR}/{filename}")
             print(f"(?) Removed file {filename}")
@@ -128,9 +239,9 @@ class DBManager:
         
     def get_tree(self, id: int) -> list | None:
         filename = self.sql.get_analysis_filename_by_id(id)
-        if filename != None:
+        if filename is not None:
             data_obj = self.load_from_file(f"{DB_DIR}/{filename}")
-            sentences: list = data_obj.model_dump()["sentences"]
+            sentences = data_obj.model_dump()["sentences"]
             trees = []
             for sent in sentences:
                 trees.append(sent["tokens"])
@@ -141,8 +252,16 @@ class DBManager:
 
 class Parser:
     def __init__(self) -> None:
-        self.nlp = spacy.load("en_core_web_sm")
+        try:
+            self.nlp = spacy.load("en_core_web_md")
+        except OSError:
+            print("(!) Installing en_core_web_md model...")
+            import os
+            os.system('python -m spacy download en_core_web_md')
+            self.nlp = spacy.load("en_core_web_md")
+        
         self.manager = DBManager()
+        self.semantic_analyzer = SemanticAnalyzer(self.nlp)
     
     def get_tag_rus(self, tag: str) -> str:
         tag_map = {
@@ -204,6 +323,7 @@ class Parser:
         return dep_map.get(dep_.lower(), f"Неизвестно ({dep_})")
     
     def parse_text_only(self, text: str) -> tuple[TextData, int, float]:
+        """Парсит текст без сохранения в БД (для редактирования)"""
         if not text.strip():
             return None, 0, 0.0
         
@@ -215,23 +335,44 @@ class Parser:
         for i, sent in enumerate(doc.sents):
             tokens = []
             
+            root_token = None
             for token in sent:
-                if (token.like_url or token.like_email or token.like_num or not token.text.strip()):
+                if token.dep_ == "root":
+                    root_token = token
+                    break
+            
+            for token in sent:
+                if (token.like_url or token.like_email or 
+                    token.like_num or not token.text.strip()):
                     continue
                 
                 form = token.text.lower().strip()
+                lemma = token.lemma_.lower()
                 role = self.get_dep_rus(token.dep_.lower())
                 tag = self.get_tag_rus(token.tag_)
                 parent_word = token.head.text
                 
+                token_index_in_sentence = token.i - sent.start
+
                 if token.head == token:
                     parent_index_in_sentence = ROOT_IDX
                 else:
-                    parent_index_in_sentence = token.head.i
+                    parent_index_in_sentence = token.head.i - sent.start
+                
+                semantic_info = self.semantic_analyzer.analyze_token_semantics(token, root_token)
                 
                 token_obj = TokenData(
-                    id=token.i, word=form, tag=tag, dep=role,
-                    parent_word=parent_word, parent_id=parent_index_in_sentence
+                    id=token_index_in_sentence,
+                    word=form,
+                    lemma=lemma,
+                    tag=tag,
+                    dep=role,
+                    parent_word=parent_word,
+                    parent_id=parent_index_in_sentence,
+                    semantic_class=semantic_info["semantic_class"],
+                    entity_type=semantic_info["entity_type"],
+                    similarity_to_root=semantic_info["similarity_to_root"],
+                    is_stop_word=semantic_info["is_stop_word"]
                 )
                 tokens.append(token_obj)
                 word_count += 1
@@ -241,9 +382,11 @@ class Parser:
         
         text_data = TextData(
             meta={
-                "language": "English", "model_used": "en_core_web_sm",
+                "language": "English",
+                "model_used": "en_core_web_md",
                 "processed_at": datetime.now().isoformat(),
-                "total_sentences": len(sentences)
+                "total_sentences": len(sentences),
+                "semantic_analysis": True
             },
             sentences=sentences
         )
@@ -252,6 +395,7 @@ class Parser:
         return text_data, word_count, duration
     
     def parse(self, text: str, name: str) -> tuple[int, float]:
+        """Парсит текст и сохраняет в БД"""
         text_data, word_count, duration = self.parse_text_only(text)
         
         if text_data is None:

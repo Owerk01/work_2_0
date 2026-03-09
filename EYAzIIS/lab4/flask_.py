@@ -19,7 +19,6 @@ ALLOWED_EXTENSIONS = {'txt', 'rtf'}
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-    
 
 def extract_text_from_file(filepath, filename):
     ext = filename.rsplit('.', 1)[1].lower()
@@ -52,8 +51,6 @@ def parse():
     name = request.form.get('name', '').strip()
     file = request.files.get('file')
     
-    if file and not name:
-        name = secure_filename(file.filename).split('.')[0]
     if not name:
         name = f"Анализ_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
     
@@ -71,7 +68,7 @@ def parse():
     try:
         parser = get_parser()
         word_count, duration = parser.parse(text, name)
-        flash(f'Успешно обработано! Слов: {word_count}, Время: {duration:.3f} сек.', 'success')
+        flash(f'Успешно обработано! Слов: {word_count}, Время: {duration:.3f} сек. (семантико-синтаксический анализ)', 'success')
     except Exception as e:
         flash(f'Ошибка обработки: {str(e)}', 'error')
         return redirect(url_for('index'))
@@ -167,9 +164,7 @@ def edit(id):
                 
                 if text_data:
                     db_manager.update_existing_analysis(text_data, id, filename, new_name)
-                    
                     sql_helper.save_parsing_stat(word_count, duration)
-                    
                     flash(f'Текст обновлён! Слов: {word_count}, Время: {duration:.3f} сек.', 'success')
                 else:
                     flash('Ошибка парсинга текста!', 'error')
@@ -198,4 +193,4 @@ def help():
     return render_template('help.html')
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5500, threaded=True)
+    app.run(debug=True, port=5000, threaded=True)

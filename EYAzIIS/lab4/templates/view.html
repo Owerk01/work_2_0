@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Анализ: {{ text_name }}</h2>
+    <a href="{{ url_for('browse') }}" class="btn btn-secondary">← Назад к списку</a>
+</div>
+
+<h3 class="mb-3">Предложения</h3>
+<div class="list-group">
+    {% for sentence in text_data.sentences %}
+    <a href="{{ url_for('sentence', analysis_id=analysis_id, sentence_id=loop.index0) }}" 
+       class="list-group-item list-group-item-action">
+        <div class="d-flex w-100 justify-content-between">
+            <h5 class="mb-1">Предложение #{{ loop.index }}</h5>
+            <small>{{ sentence.tokens|length }} слов</small>
+        </div>
+        <p class="mb-1 text-muted">{{ sentence.text[:100] }}{% if sentence.text|length > 100 %}...{% endif %}</p>
+        <small class="text-primary">Нажмите для просмотра дерева с семантическими метками</small>
+    </a>
+    {% endfor %}
+</div>
+{% endblock %}

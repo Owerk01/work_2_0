@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Загрузка текста для семантико-синтаксического анализа</h2>
+<p class="text-muted">Введите английский текст или загрузите файл для семантико-синтаксического анализа.</p>
+
+<form method="POST" action="{{ url_for('parse') }}" enctype="multipart/form-data">
+    <div class="mb-3">
+        <label class="form-label">Название анализа (необязательно):</label>
+        <input type="text" name="name" class="form-control" placeholder="Например: My first analysis">
+    </div>
+    
+    <div class="mb-3">
+        <label class="form-label">Текст:</label>
+        <textarea name="text" class="form-control" rows="8" placeholder="Введите английский текст здесь...&#10;Например: The cat runs quickly. It loves to play."></textarea>
+    </div>
+    
+    <div class="mb-3">
+        <label class="form-label">Или загрузите файл:</label>
+        <input type="file" name="file" class="form-control" accept=".txt,.rtf">
+        <div class="form-text">Поддерживаются форматы: .txt, .rtf</div>
+    </div>
+    
+    <button type="submit" class="btn btn-primary">
+        <i class="bi bi-play-fill"></i> Обработать текст
+    </button>
+</form>
+{% endblock %}
