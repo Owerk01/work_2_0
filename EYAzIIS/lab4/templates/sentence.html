@@ -67,12 +67,12 @@ const tokens = [
     {% for token in sentence.tokens %}
     {
         id: {{ token.id }},
-        word: "{{ token.word }}",
-        lemma: "{{ token.lemma }}",
-        tag: "{{ token.tag }}",
-        dep: "{{ token.dep }}",
+        word: {{ token.word | tojson }}, 
+        lemma: {{ token.lemma | tojson }},
+        tag: {{ token.tag | tojson }},
+        dep: {{ token.dep | tojson }},
         parent_id: {{ token.parent_id }},
-        semantic_class: "{{ token.semantic_class }}"
+        semantic_class: {{ token.semantic_class | tojson }}
     }{% if not loop.last %},{% endif %}
     {% endfor %}
 ];
