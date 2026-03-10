@@ -61,9 +61,8 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="https://d3js.org/d3.v7.min.js  "></script>
 <script>
-// Данные приходят из шаблона
 const tokens = [
     {% for token in sentence.tokens %}
     {
@@ -80,21 +79,18 @@ const tokens = [
 
 function drawTree() {
     const container = document.getElementById('tree-container');
-    // Защита от отсутствия контейнера
     if (!container) return;
 
     const width = container.clientWidth || 1200;
-    const height = Math.max(600, tokens.length * 40); // Динамическая высота
+    const height = Math.max(600, tokens.length * 40);
     
     const svg = d3.select("#dependency-tree");
-    svg.selectAll("*").remove(); // Полная очистка
+    svg.selectAll("*").remove();
     
-    // Настройка viewBox для адаптивности
     svg.attr("viewBox", [-width / 2, -50, width, height])
        .attr("width", "100%")
        .attr("height", height);
 
-    // 1. Построение иерархии
     const rootToken = tokens.find(t => t.parent_id === -1) || tokens[0];
     
     function buildHierarchy(rootToken, allTokens, visited = new Set()) {
@@ -102,7 +98,6 @@ function drawTree() {
         visited.add(rootToken.id);
         
         const node = { ...rootToken, children: [] };
-        // Сортируем детей для красивого порядка (опционально)
         const children = allTokens
             .filter(t => t.parent_id === rootToken.id)
             .sort((a, b) => a.id - b.id); 
@@ -118,7 +113,6 @@ function drawTree() {
     const visited = new Set();
     let hierarchy = buildHierarchy(rootToken, tokens, visited);
     
-    // Обработка изолированных узлов (если граф не связный)
     const unreachableTokens = tokens.filter(t => !visited.has(t.id));
     if (unreachableTokens.length > 0) {
         if (!hierarchy) {
@@ -131,32 +125,27 @@ function drawTree() {
 
     const root_d3 = d3.hierarchy(hierarchy);
 
-    // 2. Настройка макета дерева (исправляем слипание)
     const treeLayout = d3.tree()
-        .size([width * 0.8, height - 150]) // Оставляем поля
+        .nodeSize([160, 120])
         .separation((a, b) => {
-            // Увеличиваем расстояние между соседями
-            return (a.parent == b.parent ? 2.5 : 3.5) / (a.depth + 1); 
+            return (a.parent == b.parent ? 1.2 : 1.5); 
         });
 
     treeLayout(root_d3);
 
-    // Группа для зума и панорамирования
     const g = svg.append("g")
-        .attr("transform", "translate(0, 40)"); // Начальный отступ сверху
+        .attr("transform", "translate(0, 40)");
 
     const zoom = d3.zoom()
         .scaleExtent([0.2, 3])
         .on("zoom", (event) => { g.attr("transform", event.transform); });
 
-    svg.call(zoom).on("dblclick.zoom", null); // Отключаем зум по двойному клику для своего обработчика
+    svg.call(zoom).on("dblclick.zoom", null);
     
-    // Двойной клик сбрасывает зум
     svg.on("dblclick", () => {
         svg.transition().duration(750).call(zoom.transform, d3.zoomIdentity.translate(0, 40));
     });
 
-    // --- ОТРИСОВКА СВЯЗЕЙ (LINKS) ---
     const links = root_d3.links().filter(l => l.source.data.id !== -999 && l.target.data.id !== -999);
 
     const linkGroup = g.selectAll(".link-group")
@@ -164,18 +153,16 @@ function drawTree() {
         .enter().append("g")
         .attr("class", "link-group");
 
-    // Рисуем кривую
     const linkPath = linkGroup.append("path")
         .attr("class", "link")
         .attr("d", d3.linkHorizontal()
             .x(d => d.x)
             .y(d => d.y))
         .attr("fill", "none")
-        .attr("stroke", "#cbd5e1") // Мягкий серый цвет
+        .attr("stroke", "#cbd5e1")
         .attr("stroke-width", 2.5)
         .attr("stroke-linecap", "round");
 
-    // Рисуем фон под текстом связи (чтобы перекрывать линию)
     const linkLabelBg = linkGroup.append("rect")
         .attr("class", "link-label-bg")
         .attr("fill", "#ffffff")
@@ -183,7 +170,6 @@ function drawTree() {
         .attr("rx", 4)
         .attr("ry", 4);
 
-    // Рисуем текст связи
     const linkLabel = linkGroup.append("text")
         .attr("class", "link-label")
         .attr("text-anchor", "middle")
@@ -193,7 +179,6 @@ function drawTree() {
         .attr("fill", "#64748b")
         .text(d => d.target.data.dep);
 
-    // --- ОТРИСОВКА НОД (NODES) ---
     const nodes = root_d3.descendants().filter(d => d.data.id !== -999);
 
     const nodeGroup = g.selectAll(".node")
@@ -207,7 +192,6 @@ function drawTree() {
             .on("end", dragended))
         .style("cursor", "grab");
 
-    // Тень для ноды (фильтр)
     svg.append("defs").append("filter")
         .attr("id", "soft-shadow")
         .append("feDropShadow")
@@ -217,7 +201,6 @@ function drawTree() {
         .attr("flood-color", "#000000")
         .attr("flood-opacity", 0.1);
 
-    // Прямоугольник ноды
     const nodeRect = nodeGroup.append("rect")
         .attr("x", -70)
         .attr("y", -35)
@@ -232,17 +215,15 @@ function drawTree() {
         .append("title")
         .text(d => `${d.data.word}\nЛемма: ${d.data.lemma}\nКласс: ${d.data.semantic_class}`);
 
-    // Текст: Слово
     nodeGroup.append("text")
         .attr("text-anchor", "middle")
         .attr("y", -5)
         .attr("font-family", "'Inter', system-ui, sans-serif")
         .attr("font-weight", "700")
         .attr("font-size", "14px")
-        .attr("fill", "#1e293b") // Темно-синий/серый для контраста
+        .attr("fill", "#1e293b")
         .text(d => d.data.word);
 
-    // Текст: POS Tag
     nodeGroup.append("text")
         .attr("text-anchor", "middle")
         .attr("y", 15)
@@ -252,7 +233,6 @@ function drawTree() {
         .attr("fill", "#475569")
         .text(d => d.data.tag);
 
-    // Текст: Семантический класс (мелко)
     nodeGroup.append("text")
         .attr("text-anchor", "middle")
         .attr("y", 28)
@@ -262,12 +242,10 @@ function drawTree() {
         .attr("font-style", "italic")
         .text(d => d.data.semantic_class);
 
-    // Функция обновления позиций (для драга и начальной отрисовки меток)
     function updateLabels() {
         linkLabel.attr("x", d => (d.source.x + d.target.x) / 2)
                  .attr("y", d => (d.source.y + d.target.y) / 2 - 2);
         
-        // Вычисляем размеры текста для фона
         linkLabel.each(function() {
             const bbox = this.getBBox();
             const padding = 4;
@@ -279,10 +257,8 @@ function drawTree() {
         });
     }
 
-    // Запуск обновления меток после рендера
     setTimeout(updateLabels, 50);
 
-    // --- ЛОГИКА DRAG & DROP ---
     function dragstarted(event, d) {
         d3.select(this).select("rect")
             .attr("stroke", "#3b82f6")
@@ -295,10 +271,8 @@ function drawTree() {
         d.y = event.y;
         d3.select(this).attr("transform", `translate(${d.x},${d.y})`);
         
-        // Перерисовываем пути связей
         linkPath.attr("d", d3.linkHorizontal().x(d => d.x).y(d => d.y));
         
-        // Обновляем позиции меток
         updateLabels();
     }
 
@@ -309,7 +283,6 @@ function drawTree() {
         d3.select(this).style("cursor", "grab");
     }
 
-    // Вспомогательная функция цветов (Пастельная палитра)
     function getNodeColor(data, type) {
         const colors = {
             "ЖИВОТНОЕ": { bg: "#fef3c7", border: "#f59e0b" },
@@ -335,13 +308,12 @@ function drawTree() {
         
         if (data._unreachable) return type === 'bg' ? "#fecaca" : "#ef4444";
         if (data._isFakeRoot) return type === 'bg' ? "#f0fdf4" : "#22c55e";
-        if (data.parent_id === -1) return type === 'bg' ? "#fffbeb" : "#f59e0b"; // Корень
+        if (data.parent_id === -1) return type === 'bg' ? "#fffbeb" : "#f59e0b";
 
         return base[type];
     }
 }
 
-// Функция для HTML дерева (оставил вашу логику, но улучшил стили)
 function drawTreeStructure() {
     const root = tokens.find(t => t.parent_id === -1) || tokens[0];
     const container = document.getElementById("tree-structure");
@@ -371,7 +343,6 @@ function drawTreeStructure() {
         const children = allTokens.filter(t => t.parent_id === token.id);
         const badgeClass = classColors[token.semantic_class] || "bg-light text-dark";
         
-        // Современный стиль карточки
         let html = `
             <div class="tree-node-item mb-2 ps-3" style="margin-left: ${level * 20}px; border-left: 2px solid #e2e8f0; padding-left: 15px;">
                 <div class="d-inline-flex align-items-center gap-2 p-2 rounded shadow-sm bg-white border">
@@ -393,10 +364,9 @@ function drawTreeStructure() {
     container.innerHTML = buildTreeHtml(root, tokens);
 }
 
-// Добавляем стили
 const style = document.createElement('style');
 style.textContent = `
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter  :wght@400;500;600;700&display=swap');
     
     body { font-family: 'Inter', system-ui, sans-serif; }
 
@@ -421,7 +391,6 @@ style.textContent = `
         to { opacity: 1; transform: translateY(0); }
     }
 
-    /* Стили для скроллбара если нужно */
     ::-webkit-scrollbar { width: 8px; height: 8px; }
     ::-webkit-scrollbar-track { background: #f1f5f9; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
@@ -429,7 +398,6 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 
-// Инициализация
 setTimeout(() => {
     drawTree();
     drawTreeStructure();

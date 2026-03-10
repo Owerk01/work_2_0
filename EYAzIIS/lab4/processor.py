@@ -9,7 +9,6 @@ from pydantic import ValidationError
 ROOT_IDX = -1
 
 class SemanticAnalyzer:
-    """Семантический анализатор на основе spaCy"""
     
     def __init__(self, nlp):
         self.nlp = nlp
@@ -323,7 +322,6 @@ class Parser:
         return dep_map.get(dep_.lower(), f"Неизвестно ({dep_})")
     
     def parse_text_only(self, text: str) -> tuple[TextData, int, float]:
-        """Парсит текст без сохранения в БД (для редактирования)"""
         if not text.strip():
             return None, 0, 0.0
         
@@ -395,7 +393,6 @@ class Parser:
         return text_data, word_count, duration
     
     def parse(self, text: str, name: str) -> tuple[int, float]:
-        """Парсит текст и сохраняет в БД"""
         text_data, word_count, duration = self.parse_text_only(text)
         
         if text_data is None:
