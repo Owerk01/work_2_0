@@ -15,21 +15,60 @@ app.secret_key = 'supersecretkey123'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 
-ALLOWED_EXTENSIONS = {'txt', 'rtf'}
+ALLOWED_EXTENSIONS = {'txt', 'rtf', 'doc', 'docx'}
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 def extract_text_from_file(filepath, filename):
     ext = filename.rsplit('.', 1)[1].lower()
+    
     if ext == 'txt':
         with open(filepath, 'r', encoding='utf-8') as f:
             return f.read()
+    
     elif ext == 'rtf':
         from striprtf.striprtf import rtf_to_text
         with open(filepath, 'r', encoding='utf-8') as f:
             content = f.read()
         return rtf_to_text(content)
+    
+    elif ext == 'docx':
+        from docx import Document
+        try:
+            doc = Document(filepath)
+            return "\n".join(para.text for para in doc.paragraphs)
+        except:
+            return None
+    
+    elif ext == 'doc':
+        try:
+            import subprocess
+            result = subprocess.run(
+                ['antiword', filepath],
+                capture_output=True,
+                text=True,
+                timeout=30,
+                encoding='utf-8',
+                errors='ignore'
+            )
+            if result.returncode == 0 and result.stdout.strip():
+                return result.stdout
+            else:
+                result = subprocess.run(
+                    ['antiword', '-m', 'UTF-8', filepath],
+                    capture_output=True,
+                    text=True,
+                    timeout=30
+                )
+                if result.returncode == 0:
+                    return result.stdout
+        except FileNotFoundError:
+            print("(!) antiword not installed. Install it: sudo apt install antiword")
+        except Exception as e:
+            print(f"(!) Error reading .doc: {e}")
+        return None
+    
     return None
 
 def get_parser():
