@@ -11,8 +11,6 @@ public:
   ~MainWindow();
 
 public slots:
-  void show_notification(const QString &text = "Dummy text",
-                         int fade_length = 1500);
   void on_info();
   void on_help();
   void on_px_size_setting();

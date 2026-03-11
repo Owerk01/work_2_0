@@ -1,7 +1,5 @@
 #pragma once
 
-#include <QCheckBox>
-#include <QToolButton>
 #include <cstdint>
 #include <vector>
 
@@ -31,7 +29,9 @@ enum class GType {
   Hyperbola = 6,
   Hermit = 7,
   Bezier = 8,
-  BSpline = 9
+  BSpline = 9,
+  Cube = 10,
+  Tetrahedron = 11
 };
 
 struct Point {
@@ -52,28 +52,4 @@ struct Figure {
   GType fig_type;
   Figure() {}
   Figure(GType type) : fig_type(type) {}
-};
-
-class ToolBarObject {
-public:
-  virtual ~ToolBarObject() = default;
-  virtual void init() = 0;
-};
-
-class TBOButton : public ToolBarObject {
-public:
-  ~TBOButton() override;
-  virtual void init() override;
-
-private:
-  QToolButton *btn;
-};
-
-class TBOCheckBox : public ToolBarObject {
-public:
-  ~TBOCheckBox() override;
-  virtual void init() override;
-
-private:
-  QCheckBox *chk_box;
 };

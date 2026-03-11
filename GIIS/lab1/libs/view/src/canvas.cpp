@@ -19,6 +19,8 @@ Canvas::Canvas(QWidget *parent, bool is_grid, int pixel_size)
 
 Canvas::~Canvas() { std::cout << "Canvas out...\n"; }
 
+int Canvas::get_px_size() const { return this->px_size; }
+
 void Canvas::set_locked(bool lock) { this->locked = lock; }
 
 void Canvas::set_px_size(int size) {

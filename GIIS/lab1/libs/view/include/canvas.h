@@ -12,10 +12,13 @@ public:
   explicit Canvas(QWidget *parent = nullptr, bool is_grid = true,
                   int pixel_size = CELL);
   ~Canvas();
+
   void set_px_size(int size);
   void set_show_grid(bool grid);
   void set_pixel(Point px);
   void set_locked(bool lock);
+
+  int get_px_size() const;
 
 public slots:
   void on_size_update();

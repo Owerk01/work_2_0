@@ -12,12 +12,16 @@
 #include <utility>
 #include <vector>
 
-DataHandler::DataHandler(Debugger *debugger)
-    : counter(0), debugger(debugger), figures({}) {}
+DataHandler::DataHandler(Debugger *debugger, Figure f)
+    : counter(0), debugger(debugger), figures({}), fig(f) {}
 
 DataHandler::~DataHandler() { std::cout << "Data handler out...\n"; }
 
 void DataHandler::set_figure(Figure fig) { this->fig = fig; }
+Figure DataHandler::get_figure() const {
+  return this->fig;
+  ;
+}
 
 void DataHandler::reset() {
   this->fig.points.clear();

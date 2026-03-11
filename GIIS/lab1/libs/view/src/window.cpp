@@ -14,12 +14,12 @@
 #include <QMenuBar>
 #include <QMessageBox>
 #include <QScrollArea>
+#include <QShortcut>
 #include <QTimer>
 #include <QToolBar>
 #include <QToolButton>
 #include <QWidget>
 #include <iostream>
-#include <qnamespace.h>
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
 
@@ -33,7 +33,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
   // Init working area
   // The very "parent" widget
   QWidget *central = new QWidget(this);
-  setCentralWidget(central);
+  this->setCentralWidget(central);
 
   // Manage global working area
   QHBoxLayout *main_view = new QHBoxLayout(central);
@@ -45,7 +45,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
   scroll_area->setWidgetResizable(false);
 
   Canvas *canvas = new Canvas(scroll_area);
-  connect(canvas, &Canvas::clicked_px, this, &MainWindow::on_clicked_px);
+  this->connect(canvas, &Canvas::clicked_px, this, &MainWindow::on_clicked_px);
   scroll_area->setWidget(canvas);
 
   // Manage working area inside frame
@@ -56,27 +56,28 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
   main_view->addWidget(border_frame);
 
   this->debugger = new Debugger(canvas);
-  this->data_handler = new DataHandler(this->debugger);
+  this->data_handler = new DataHandler(this->debugger, {GType::CDA});
 
   // Init menu bar
   QMenu *file_menu = this->menuBar()->addMenu("Info");
   QMenu *settings_menu = this->menuBar()->addMenu("Settings");
 
   QAction *program_help = new QAction("Help", this);
-  connect(program_help, &QAction::triggered, this, &MainWindow::on_help);
+  this->connect(program_help, &QAction::triggered, this, &MainWindow::on_help);
 
   QAction *program_about = new QAction("About", this);
-  connect(program_about, &QAction::triggered, this, &MainWindow::on_info);
+  this->connect(program_about, &QAction::triggered, this, &MainWindow::on_info);
 
   QAction *grid_size_setting = new QAction("Cell size", this);
-  connect(grid_size_setting, &QAction::triggered, canvas,
-          &Canvas::on_size_update);
+  this->connect(grid_size_setting, &QAction::triggered, canvas,
+                &Canvas::on_size_update);
 
   QAction *grid_show_setting = new QAction("Show grid", this);
   grid_show_setting->setCheckable(true);
   grid_show_setting->setChecked(true);
   grid_show_setting->setToolTip("Enable/disable grid");
-  connect(grid_show_setting, &QAction::toggled, canvas, &Canvas::on_grid_show);
+  this->connect(grid_show_setting, &QAction::toggled, canvas,
+                &Canvas::on_grid_show);
 
   file_menu->addAction(program_help);
   file_menu->addAction(program_about);
@@ -85,9 +86,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
   settings_menu->addAction(grid_show_setting);
 
   // Init toolbar
-  QToolBar *tool_bar = addToolBar("Tools");
+  QToolBar *tool_bar = this->addToolBar("Tools");
   tool_bar->addSeparator();
 
+  // set misc buttons
   QToolButton *clear_canvas_btn = new QToolButton(tool_bar);
   clear_canvas_btn->setText("Clear");
   clear_canvas_btn->setToolTip(
@@ -152,72 +154,101 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
   arl_btn->setPopupMode(QToolButton::InstantPopup);
   //
 
+  // button with popup, goddamn x3
+  QToolButton *btn_3D = new QToolButton(tool_bar);
+  btn_3D->setText("3D");
+  btn_3D->setToolTip("3D figures");
+  btn_3D->setMaximumWidth(4 * CELL);
+
+  QMenu *menu_3D = new QMenu(btn_3D);
+  menu_3D->addAction("Cube")->setData(static_cast<int>(GType::Cube));
+  menu_3D->addAction("Tetrahedron")
+      ->setData(static_cast<int>(GType::Tetrahedron));
+
+  btn_3D->setMenu(menu_3D);
+  btn_3D->setPopupMode(QToolButton::InstantPopup);
+  //
+
+  // algs buttons
   tool_bar->addWidget(frl_btn);
-  connect(frl_menu, &QMenu::triggered, this, [this](QAction *act) {
+  this->connect(frl_menu, &QMenu::triggered, this, [this](QAction *act) {
     int id = act->data().toInt();
-    this->show_notification("Line: start, end", 7500);
     this->data_handler->set_figure({static_cast<GType>(id)});
   });
 
   tool_bar->addWidget(srl_btn);
-  connect(srl_menu, &QMenu::triggered, this, [this](QAction *act) {
+  this->connect(srl_menu, &QMenu::triggered, this, [this](QAction *act) {
     int id = act->data().toInt();
-    this->show_notification("Circle: center, radius\n"
-                            "Elipsis: center, a (x axis), b (y axis)",
-                            10000);
     this->data_handler->set_figure({static_cast<GType>(id)});
   });
 
   tool_bar->addWidget(arl_btn);
-  connect(arl_menu, &QMenu::triggered, this, [this](QAction *act) {
+  this->connect(arl_menu, &QMenu::triggered, this, [this](QAction *act) {
     int id = act->data().toInt();
-    this->show_notification("Hermite: start, force1, end, force2\n"
-                            "Bezier: start, magnet1, magnet2, end\n"
-                            "BSpline: 8 point",
-                            10000);
     this->data_handler->set_figure({static_cast<GType>(id)});
   });
 
-  //
-  tool_bar->addWidget(clear_canvas_btn);
-  connect(clear_canvas_btn, &QToolButton::clicked, canvas, [this, canvas]() {
-    canvas->on_clear();
-    this->show_notification("Cleared canvas");
-    bool d = this->debugger->get_debug();
-    this->debugger->reset();
-    this->data_handler->reset();
-    this->debugger->set_debug(d);
+  tool_bar->addWidget(btn_3D);
+  this->connect(menu_3D, &QMenu::triggered, this, [this](QAction *act) {
+    int id = act->data().toInt();
+    this->data_handler->set_figure({static_cast<GType>(id)});
   });
+
+  // misc buttons
+  tool_bar->addWidget(clear_canvas_btn);
+  this->connect(clear_canvas_btn, &QToolButton::clicked, canvas,
+                [this, canvas]() {
+                  canvas->on_clear();
+                  bool d = this->debugger->get_debug();
+                  this->debugger->reset();
+                  this->data_handler->reset();
+                  this->debugger->set_debug(d);
+                });
 
   tool_bar->addWidget(debug_checkbox);
-  connect(debug_checkbox, &QCheckBox::toggled, this, [this](bool checked) {
-    if (checked) {
-      qDebug() << "Debug ON";
-      this->show_notification("Debug ON");
-      this->debugger->reset();
-      this->debugger->set_debug(true);
-    } else {
-      qDebug() << "Debug OFF";
-      this->show_notification("Debug OFF");
-      this->debugger->set_debug(false);
-      this->debugger->begin_debug();
-    }
-  });
+  this->connect(debug_checkbox, &QCheckBox::toggled, this,
+                [this](bool checked) {
+                  if (checked) {
+                    qDebug() << "Debug ON";
+                    this->debugger->reset();
+                    this->debugger->set_debug(true);
+                  } else {
+                    qDebug() << "Debug OFF";
+                    this->debugger->set_debug(false);
+                    this->debugger->begin_debug();
+                  }
+                });
 
   tool_bar->addWidget(debug_step_btn);
-  connect(debug_checkbox, &QCheckBox::toggled, debug_step_btn,
-          &QToolButton::setEnabled);
-  connect(debug_step_btn, &QToolButton::clicked, this,
-          [this]() { this->debugger->begin_debug(); });
+  this->connect(debug_checkbox, &QCheckBox::toggled, debug_step_btn,
+                &QToolButton::setEnabled);
+  this->connect(debug_step_btn, &QToolButton::clicked, this,
+                [this]() { this->debugger->begin_debug(); });
 
   tool_bar->addWidget(debug_stop_btn);
-  connect(debug_checkbox, &QCheckBox::toggled, debug_stop_btn,
-          &QToolButton::setEnabled);
-  connect(debug_stop_btn, &QToolButton::clicked, this, [this]() {
+  this->connect(debug_checkbox, &QCheckBox::toggled, debug_stop_btn,
+                &QToolButton::setEnabled);
+  this->connect(debug_stop_btn, &QToolButton::clicked, this, [this]() {
     bool d = this->debugger->get_debug();
     this->debugger->set_debug(false);
     this->debugger->begin_debug();
     this->debugger->set_debug(d);
+  });
+
+  // setup shortcuts
+
+  // increase cell size
+  new QShortcut(QKeySequence("+"), this, [canvas]() {
+    int sz = canvas->get_px_size();
+    sz++;
+    canvas->set_px_size(sz);
+  });
+
+  // decrease cell size
+  new QShortcut(QKeySequence("-"), this, [canvas]() {
+    int sz = canvas->get_px_size();
+    sz--;
+    canvas->set_px_size(sz);
   });
 }
 
@@ -232,42 +263,37 @@ void MainWindow::on_info() {
                            "Awesome Editor created by Owerk and Glentas (and "
                            "Qwen)\n"
                            "C++ and Qt6.10.2\n"
-                           "Version 1.2\n"
+                           "Version 2.3\n"
                            "2026");
 }
 
 void MainWindow::on_help() {
-  QMessageBox::information(this, "Help", "Nothing here yet :3");
+  QMessageBox::information(
+      this, "Help",
+      "1. To draw a line - set a start point and an end point\n"
+      "2. To draw a circle - set a center point and a radius (relative to "
+      "center point)\n"
+      "3. To draw a elipsis - set a center point, a (x axis, relative to "
+      "center "
+      "point) and b (y axis, relative to center point)\n"
+      "4. To draw a Hermit curve - set a start point, a start force, an end "
+      "point and an end force\n"
+      "5. To draw a Bezier curve - set a start point, the first magnet, the "
+      "second magnet and an end point\n"
+      "6. To draw a bspline - set 8 points\n"
+      "7. To draw a cube - set the first vertex point and edge length\n"
+      "8. To draw a tetrahedron - set the first vertex point and edge length\n"
+      "\n"
+      "Useful shortcuts:\n"
+      "'+' - increase grid size\n"
+      "'-' - decrease grid size\n"
+      "'x' - rotate 3D object in x axis\n"
+      "'y' - rotate 3D object in y axis\n"
+      "'z' - rotate 3D object in z axis\n"
+      "'b' - scale 3D object up\n"
+      "'s' - scale 3D object down\n"
+      "arrows - move 3D object\n");
 }
 
-void MainWindow::show_notification(const QString &text, int fade_length) {
-  QLabel *notification = new QLabel(this);
-  notification->setText(text);
-  notification->setStyleSheet("QLabel {"
-                              "  background-color: #b8e7fe;"
-                              "  color: #000000;"
-                              "  border: 2px solid #000000;"
-                              "  border-radius: 4px;"
-                              "  padding: 6px 10px;"
-                              "  font-size: 10pt;"
-                              "  min-width: 80px;"
-                              "  text-align: center;"
-                              "}");
-  notification->setAlignment(Qt::AlignCenter);
-  notification->setAttribute(Qt::WA_DeleteOnClose);
-  notification->setWindowFlags(Qt::ToolTip);
-
-  notification->adjustSize();
-
-  QPoint local_pos = this->rect().topRight();
-  local_pos.setX(local_pos.x() - notification->width() - 10);
-  local_pos.setY(local_pos.y() + 10);
-
-  QPoint global_pos = this->mapToGlobal(local_pos);
-  notification->move(global_pos);
-
-  notification->show();
-  QTimer::singleShot(fade_length, notification, &QWidget::close);
-}
-
+// connecting user clicks, in order to calculate when to launch algorithms
 void MainWindow::on_clicked_px(Point px) { this->data_handler->add_point(px); }

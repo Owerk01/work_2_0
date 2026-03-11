@@ -7,13 +7,14 @@
 
 class DataHandler {
 public:
-  DataHandler(Debugger *debugger);
+  DataHandler(Debugger *debugger, Figure f);
   ~DataHandler();
 
   void reset();
   void launch_debugger();
   void add_point(Point pt);
   void set_figure(Figure fig);
+  Figure get_figure() const;
   std::vector<Point>
       transform_to_pts(std::vector<std::tuple<int, int, double>>);
 
