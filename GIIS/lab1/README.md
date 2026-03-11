@@ -1,14 +1,16 @@
-# В адекватном состоянии не запускать
+Assuming you have cmake and QT 6.10.2 installed.
+In CMakePresets.json configure path to your QT (for example: /home/n25/Qt/6.10.2/gcc_64).
 
-Установлен cmake и QT 6.10.2
+Build:
 
 ```bash
-#
 mkdir build
-cd build
-# вместо path - свой путь до gcc_64, например: /home/n25/Qt/6.10.2/gcc_64
-cmake .. -DCMAKE_PREFIX_PATH=path
-cmake --build .
-# \/ запуск
-./super_editor
+cmake --preset qt6
+cmake --build --preset qt6
+```
+
+Execute program:
+
+```bash
+./build/editoR
 ```

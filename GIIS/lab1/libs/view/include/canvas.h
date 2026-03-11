@@ -1,5 +1,6 @@
 #pragma once
 #include "vars.h"
+#include <QMouseEvent>
 #include <QObject>
 #include <QPaintEvent>
 #include <QWidget>
@@ -14,6 +15,7 @@ public:
   void set_px_size(int size);
   void set_show_grid(bool grid);
   void set_pixel(Point px);
+  void set_locked(bool lock);
 
 public slots:
   void on_size_update();
@@ -21,12 +23,15 @@ public slots:
   void on_grid_show();
 
 signals:
+  void clicked_px(Point pt);
 
 protected:
   void paintEvent(QPaintEvent *) override;
+  void mousePressEvent(QMouseEvent *event) override;
 
 private:
   bool show_grid;
+  bool locked;
   int px_size;
   std::vector<Point> pixels;
 };

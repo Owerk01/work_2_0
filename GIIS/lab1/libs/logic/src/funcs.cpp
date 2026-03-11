@@ -4,8 +4,8 @@
 #include <vector>
 
 std::vector<std::tuple<int, int, double>>
-drawHermite(std::pair<int, int> P1, std::pair<int, int> Force1,
-            std::pair<int, int> P2, std::pair<int, int> Force2, int accuracy) {
+draw_hermite(std::pair<int, int> P1, std::pair<int, int> Force1,
+             std::pair<int, int> P2, std::pair<int, int> Force2, int accuracy) {
   std::vector<std::tuple<int, int, double>> points;
   double dt = 1.0 / accuracy;
 
@@ -30,18 +30,18 @@ drawHermite(std::pair<int, int> P1, std::pair<int, int> Force1,
 }
 
 std::vector<std::tuple<int, int, double>>
-drawBezier(std::pair<int, int> P1, std::pair<int, int> P2,
-           std::pair<int, int> P3, std::pair<int, int> P4, int accuracy) {
+draw_bezier(std::pair<int, int> P1, std::pair<int, int> P2,
+            std::pair<int, int> P3, std::pair<int, int> P4, int accuracy) {
 
-  return drawHermite(
+  return draw_hermite(
       P1, {3 * (P2.first - P1.first), 3 * (P2.second - P1.second)}, P4,
       {3 * (P4.first - P3.first), 3 * (P4.second - P3.second)}, accuracy);
 }
 
 std::vector<std::tuple<int, int, double>>
-drawBSplineSegment(std::pair<int, int> P_im1, std::pair<int, int> P_i,
-                   std::pair<int, int> P_ip1, std::pair<int, int> P_ip2,
-                   int accuracy) {
+draw_b_spline_segment(std::pair<int, int> P_im1, std::pair<int, int> P_i,
+                      std::pair<int, int> P_ip1, std::pair<int, int> P_ip2,
+                      int accuracy) {
   std::vector<std::tuple<int, int, double>> segment;
   double dt = 1.0 / accuracy;
 
@@ -66,15 +66,15 @@ drawBSplineSegment(std::pair<int, int> P_im1, std::pair<int, int> P_i,
 }
 
 std::vector<std::tuple<int, int, double>>
-drawBSpline(std::vector<std::pair<int, int>> controlPoints, int accuracy) {
+draw_spline(std::vector<std::pair<int, int>> controlPoints, int accuracy) {
   std::vector<std::tuple<int, int, double>> curve;
   if (controlPoints.size() < 4)
     return curve;
 
   for (size_t i = 1; i <= controlPoints.size() - 3; i++) {
-    auto seg = drawBSplineSegment(controlPoints[i - 1], controlPoints[i],
-                                  controlPoints[i + 1], controlPoints[i + 2],
-                                  accuracy);
+    auto seg = draw_b_spline_segment(controlPoints[i - 1], controlPoints[i],
+                                     controlPoints[i + 1], controlPoints[i + 2],
+                                     accuracy);
     curve.insert(curve.end(), seg.begin(), seg.end());
   }
   return curve;

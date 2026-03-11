@@ -1,10 +1,10 @@
 #include "debugger.h"
+#include "canvas.h"
 #include "vars.h"
 #include <iostream>
 
-Debugger::Debugger(Canvas *canvas, bool debug_m, std::vector<Point> pts,
-                   int step)
-    : canvas(canvas), debug_mode(debug_m), points(pts), step_i(step) {}
+Debugger::Debugger(Canvas *canvas, bool debug_m, int step)
+    : canvas(canvas), debug_mode(debug_m), step_i(step) {}
 
 Debugger::~Debugger() { std::cout << "Debugger out...\n"; }
 
@@ -12,19 +12,20 @@ void Debugger::set_debug(bool debug) { this->debug_mode = debug; }
 
 void Debugger::set_canvas(Canvas *cnvs) { this->canvas = cnvs; }
 
-void Debugger::set_points(std::vector<Point> pts) { this->points = pts; }
+void Debugger::set_figure(Figure fig) { this->fig = fig; }
 
 void Debugger::reset() {
-  this->points.clear();
   this->step_i = 0;
+  this->canvas->set_locked(false);
   this->debug_mode = false;
+  this->fig.points.clear();
 }
 
 bool Debugger::step() {
-  if (this->points.size() > 1) {
-    this->canvas->set_pixel(this->points[step_i]);
+  if (this->fig.points.size() > 1) {
+    this->canvas->set_pixel(this->fig.points[step_i]);
     this->step_i++;
-    if (this->step_i == this->points.size() - 1) {
+    if (this->step_i == this->fig.points.size() - 1) {
       return false;
     } else {
       return true;
@@ -35,17 +36,19 @@ bool Debugger::step() {
 }
 
 void Debugger::begin_debug() {
-  if (!this->points.empty()) {
+  if (!this->fig.points.empty()) {
+    this->canvas->set_locked(true);
     if (this->debug_mode == false) {
       while (this->step()) {
       }
-      this->points.clear();
+      this->reset();
+      this->debug_mode = false;
       this->step_i = 0;
     } else {
       if (this->step()) {
       } else {
-        this->points.clear();
-        this->step_i = 0;
+        this->reset();
+        this->debug_mode = true;
       }
     }
   }

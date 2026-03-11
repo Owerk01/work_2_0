@@ -1,18 +1,16 @@
 #pragma once
 #include "canvas.h"
 #include "vars.h"
-#include <vector>
 
 class Debugger {
 
 public:
-  Debugger(Canvas *canvas = nullptr, bool debug_m = false,
-           std::vector<Point> pts = {}, int step = 0);
+  Debugger(Canvas *canvas = nullptr, bool debug_m = false, int step = 0);
   ~Debugger();
 
   void set_debug(bool debug);
   void set_canvas(Canvas *cnvs);
-  void set_points(std::vector<Point> pts);
+  void set_figure(Figure fig);
 
   bool get_debug() const;
 
@@ -23,6 +21,6 @@ public:
 private:
   bool debug_mode;
   Canvas *canvas;
-  std::vector<Point> points;
+  Figure fig;
   int step_i;
 };

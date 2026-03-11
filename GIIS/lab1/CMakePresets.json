@@ -1,0 +1,19 @@
+{
+  "version": 3,
+  "configurePresets": [
+    {
+      "name": "qt6",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": {
+        "CMAKE_PREFIX_PATH": "/home/n25/Qt/6.10.2/gcc_64"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "qt6",
+      "configurePreset": "qt6"
+    }
+  ]
+}

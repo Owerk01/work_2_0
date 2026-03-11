@@ -6,7 +6,8 @@
 
 int sign(int a) { return (0 < a) - (a < 0); }
 
-std::vector<std::tuple<int, int, double>> CDA(int x1, int y1, int x2, int y2) {
+std::vector<std::tuple<int, int, double>> draw_CDA(int x1, int y1, int x2,
+                                                   int y2) {
   using namespace std;
   vector<tuple<int, int, double>> points;
   int dx = x2 - x1;
@@ -37,8 +38,8 @@ std::vector<std::tuple<int, int, double>> CDA(int x1, int y1, int x2, int y2) {
   return points;
 }
 
-std::vector<std::tuple<int, int, double>> Bresenham(int x1, int y1, int x2,
-                                                    int y2) {
+std::vector<std::tuple<int, int, double>> draw_bresenham(int x1, int y1, int x2,
+                                                         int y2) {
   using namespace std;
   vector<tuple<int, int, double>> points;
   int dx = abs(x2 - x1);
@@ -80,7 +81,8 @@ std::vector<std::tuple<int, int, double>> Bresenham(int x1, int y1, int x2,
   return points;
 }
 
-std::vector<std::tuple<int, int, double>> Wu(int x1, int y1, int x2, int y2) {
+std::vector<std::tuple<int, int, double>> draw_wu(int x1, int y1, int x2,
+                                                  int y2) {
   using namespace std;
 
   vector<tuple<int, int, double>> points;
@@ -94,7 +96,7 @@ std::vector<std::tuple<int, int, double>> Wu(int x1, int y1, int x2, int y2) {
   }
 
   if (dx == 0 || dy == 0 || abs(dx) == abs(dy)) {
-    auto simple = Bresenham(x1, y1, x2, y2);
+    auto simple = draw_bresenham(x1, y1, x2, y2);
     for (auto [x, y, _] : simple)
       points.emplace_back(x, y, 0.0);
     return points;

@@ -1,37 +1,25 @@
 #pragma once
+
+#include "debugger.h"
 #include "vars.h"
+#include <tuple>
 #include <vector>
 
 class DataHandler {
 public:
-  DataHandler();
+  DataHandler(Debugger *debugger);
   ~DataHandler();
-  std::vector<Point> get_points() const;
 
-protected:
-  std::vector<Point> points;
-};
+  void reset();
+  void launch_debugger();
+  void add_point(Point pt);
+  void set_figure(Figure fig);
+  std::vector<Point>
+      transform_to_pts(std::vector<std::tuple<int, int, double>>);
 
-// first rank line data handler (simple, straight lines)
-class FRLDataHandler : public DataHandler {
-
-public:
-  FRLDataHandler();
-  ~FRLDataHandler();
-};
-
-// second rank line data handler (parabolas, hyperbolas, circle, elipsis)
-class SRLDataHandler : public DataHandler {
-
-public:
-  SRLDataHandler(int type);
-  ~SRLDataHandler();
-};
-
-// any rank line data handler (spline, interpolation)
-class ARDataHandler : public DataHandler {
-
-public:
-  ARDataHandler(int type);
-  ~ARDataHandler();
+private:
+  int counter;
+  Figure fig;
+  std::vector<Figure> figures;
+  Debugger *debugger;
 };

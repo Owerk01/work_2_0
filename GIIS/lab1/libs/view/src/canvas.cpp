@@ -1,6 +1,7 @@
 #include "canvas.h"
 #include "vars.h"
 #include <QInputDialog>
+#include <QMouseEvent>
 #include <QObject>
 #include <QPaintEvent>
 #include <QPainter>
@@ -8,14 +9,17 @@
 #include <QString>
 #include <QWidget>
 #include <iostream>
-#include <qnamespace.h>
 #include <vector>
+
 Canvas::Canvas(QWidget *parent, bool is_grid, int pixel_size)
-    : QWidget(parent), show_grid(is_grid), px_size(pixel_size), pixels({}) {
+    : QWidget(parent), show_grid(is_grid), px_size(pixel_size), pixels({}),
+      locked(false) {
   this->set_px_size(pixel_size);
 }
 
 Canvas::~Canvas() { std::cout << "Canvas out...\n"; }
+
+void Canvas::set_locked(bool lock) { this->locked = lock; }
 
 void Canvas::set_px_size(int size) {
   if (size >= 1 && size <= 2 * CELL) {
@@ -33,7 +37,7 @@ void Canvas::set_show_grid(bool grid) {
 
 void Canvas::set_pixel(Point px) {
   if (px.x >= 0 && px.x <= CANVAS_SIZE - 1 && px.y >= 0 &&
-      px.y <= CANVAS_SIZE - 1 && px.color >= 0 && px.color <= 255) {
+      px.y <= CANVAS_SIZE - 1) {
     this->pixels.push_back(px);
     this->update();
   }
@@ -76,7 +80,7 @@ void Canvas::paintEvent(QPaintEvent *) {
   for (auto px : this->pixels) {
     int x = this->px_size > 1 ? px.x * this->px_size + 1 : px.x;
     int y = this->px_size > 1 ? px.y * this->px_size + 1 : px.y;
-    QColor col(px.color, px.color, px.color);
+    QColor col(px.r, px.g, px.b);
     p.fillRect(x, y, side, side, col);
   }
 }
@@ -86,7 +90,7 @@ void Canvas::on_size_update() {
   QString *max_size = new QString();
   max_size->assign("Size (1 - " + std::to_string(2 * CELL) + "):");
 
-  int n = QInputDialog::getInt(this, "Size of a grid cell", *max_size, CELL, 1,
+  int n = QInputDialog::getInt(this, "Size of a grid cell", *max_size, 1, 1,
                                2 * CELL, 1, &ok);
   if (ok) {
     this->set_px_size(n);
@@ -103,5 +107,24 @@ void Canvas::on_grid_show() {
     this->set_show_grid(false);
   } else {
     this->set_show_grid(true);
+  }
+}
+
+void Canvas::mousePressEvent(QMouseEvent *event) {
+  if (event->button() == Qt::LeftButton && this->locked == false) {
+    int widgetX = event->pos().x();
+    int widgetY = event->pos().y();
+
+    int gridX = widgetX / this->px_size;
+    int gridY = widgetY / this->px_size;
+
+    if (gridX >= 0 && gridX < CANVAS_SIZE && gridY >= 0 &&
+        gridY < CANVAS_SIZE) {
+      Point px(gridX, gridY, 255, 64, 64);
+
+      this->set_pixel(px);
+
+      emit this->clicked_px(px);
+    }
   }
 }

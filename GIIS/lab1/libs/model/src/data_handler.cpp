@@ -1,134 +1,205 @@
 #include "data_handler.h"
 #include "curved_lines_draw_algs.h"
-#include "dynamic_dia.h"
+#include "debugger.h"
 #include "funcs.h"
 #include "line_drawing_algs.h"
 #include "vars.h"
+#include <cmath>
+#include <cstdint>
+#include <cstdlib>
 #include <iostream>
-#include <string>
+#include <tuple>
+#include <utility>
+#include <vector>
 
-DataHandler::DataHandler() : points({}) {}
+DataHandler::DataHandler(Debugger *debugger)
+    : counter(0), debugger(debugger), figures({}) {}
+
 DataHandler::~DataHandler() { std::cout << "Data handler out...\n"; }
-std::vector<Point> DataHandler::get_points() const { return this->points; }
 
-FRLDataHandler::FRLDataHandler() {
-  DynamicDialogue dia(nullptr, "FRLine dialogue", {"x1", "y1", "x2", "y2"},
-                      "Algorithm", {"CDA", "Bresenham", "Wu"});
-  dia.exec();
+void DataHandler::set_figure(Figure fig) { this->fig = fig; }
 
-  int x1 = dia.get_spin_by_name("x1");
-  int y1 = dia.get_spin_by_name("y1");
-  int x2 = dia.get_spin_by_name("x2");
-  int y2 = dia.get_spin_by_name("y2");
-  std::string alg_type = dia.get_combo_box();
+void DataHandler::reset() {
+  this->fig.points.clear();
+  this->figures.clear();
+  this->counter = 0;
+}
 
-  if (!(x1 == CODE_ERROR && y1 == CODE_ERROR && x2 == CODE_ERROR &&
-        y2 == CODE_ERROR)) {
-    std::vector<std::tuple<int, int, double>> pts;
+void DataHandler::launch_debugger() {
+  this->counter++;
+  this->fig.id = this->counter;
+  this->debugger->set_figure(this->fig);
+  this->debugger->begin_debug();
+  this->figures.push_back(this->fig);
+  this->fig.points.clear();
+}
 
-    if (alg_type == "CDA") {
-      pts = CDA(x1, y1, x2, y2);
+std::vector<Point> DataHandler::transform_to_pts(
+    std::vector<std::tuple<int, int, double>> raw_pts) {
+  std::vector<Point> pts;
 
-    } else if (alg_type == "Bresenham") {
-      pts = Bresenham(x1, y1, x2, y2);
+  for (auto [x, y, c] : raw_pts) {
+    pts.push_back({x, y, static_cast<uint8_t>(c * 255)});
+  }
 
-    } else {
-      pts = Wu(x1, y1, x2, y2);
+  return pts;
+}
+
+void DataHandler::add_point(Point pt) {
+  this->fig.points.push_back(pt);
+  int sz = this->fig.points.size();
+
+  switch (this->fig.fig_type) {
+  case GType::CDA: {
+    if (sz == 2) {
+      auto raw_pts = draw_CDA(this->fig.points[0].x, this->fig.points[0].y,
+                              this->fig.points[1].x, this->fig.points[1].y);
+      auto pts = this->transform_to_pts(raw_pts);
+      this->fig.points = pts;
+
+      this->launch_debugger();
+    }
+    break;
+  }
+  case GType::Bresenham: {
+    if (sz == 2) {
+      auto raw_pts =
+          draw_bresenham(this->fig.points[0].x, this->fig.points[0].y,
+                         this->fig.points[1].x, this->fig.points[1].y);
+      auto pts = this->transform_to_pts(raw_pts);
+      this->fig.points = pts;
+
+      this->launch_debugger();
+    }
+    break;
+  }
+  case GType::Wu: {
+    if (sz == 2) {
+      auto raw_pts = draw_wu(this->fig.points[0].x, this->fig.points[0].y,
+                             this->fig.points[1].x, this->fig.points[1].y);
+      auto pts = this->transform_to_pts(raw_pts);
+      this->fig.points = pts;
+
+      this->launch_debugger();
+    }
+    break;
+  }
+  case GType::Circle: {
+    if (sz == 2) {
+      int length = std::round((std::sqrt(
+          std::pow(this->fig.points[0].x - this->fig.points[1].x, 2) +
+          std::pow(this->fig.points[0].y - this->fig.points[1].y, 2))));
+
+      auto raw_pts =
+          draw_circle(length, this->fig.points[0].x, this->fig.points[0].y);
+      auto pts = this->transform_to_pts(raw_pts);
+      this->fig.points = pts;
+
+      this->launch_debugger();
+    }
+    break;
+  }
+  case GType::Elipsis: {
+    if (sz == 3) {
+      int length_a =
+          std::round(std::abs(this->fig.points[0].x - this->fig.points[1].x));
+      int length_b =
+          std::round(std::abs(this->fig.points[0].y - this->fig.points[2].y));
+
+      auto raw_pts = draw_elipsis(length_a, length_b, this->fig.points[0].x,
+                                  this->fig.points[0].y);
+      auto pts = this->transform_to_pts(raw_pts);
+      this->fig.points = pts;
+
+      this->launch_debugger();
+    }
+    break;
+  }
+  case GType::Parabola: {
+    if (sz == 2) {
+      int length = std::round(std::sqrt(
+          std::pow(this->fig.points[0].x - this->fig.points[1].x, 2) +
+          std::pow(this->fig.points[0].y - this->fig.points[1].y, 2)));
+
+      auto raw_pts =
+          draw_parabola(this->fig.points[0].x, this->fig.points[0].y, length);
+
+      auto pts = this->transform_to_pts(raw_pts);
+      this->fig.points = pts;
+
+      this->launch_debugger();
+    }
+    break;
+  }
+  case GType::Hyperbola: {
+    if (sz == 3) {
+      int length_a =
+          std::round(std::abs(this->fig.points[0].x - this->fig.points[1].x));
+      int length_b =
+          std::round(std::abs(this->fig.points[0].y - this->fig.points[2].y));
+
+      auto raw_pts = draw_hyperbola(this->fig.points[0].x,
+                                    this->fig.points[0].y, length_a, length_b);
+
+      auto pts = this->transform_to_pts(raw_pts);
+      this->fig.points = pts;
+
+      this->launch_debugger();
+    }
+    break;
+  }
+  case GType::Hermit: {
+    if (sz == 4) {
+      auto raw_pts =
+          draw_hermite({this->fig.points[0].x, this->fig.points[0].y},
+                       {this->fig.points[1].x - this->fig.points[0].x,
+                        this->fig.points[1].y - this->fig.points[0].y},
+                       {this->fig.points[2].x, this->fig.points[2].y},
+                       {this->fig.points[3].x - this->fig.points[2].x,
+                        this->fig.points[3].y - this->fig.points[2].y});
+
+      auto pts = this->transform_to_pts(raw_pts);
+      this->fig.points = pts;
+
+      this->launch_debugger();
+    }
+    break;
+  }
+  case GType::Bezier: {
+    if (sz == 4) {
+      auto raw_pts =
+          draw_bezier({this->fig.points[0].x, this->fig.points[0].y},
+                      {this->fig.points[1].x, this->fig.points[1].y},
+                      {this->fig.points[2].x, this->fig.points[2].y},
+                      {this->fig.points[3].x, this->fig.points[3].y});
+
+      auto pts = this->transform_to_pts(raw_pts);
+      this->fig.points = pts;
+
+      this->launch_debugger();
+    }
+    break;
+  }
+  case GType::BSpline: {
+    if (sz == 8) {
+
+      std::vector<std::pair<int, int>> other_pts;
+      for (auto e : this->fig.points) {
+        other_pts.push_back({e.x, e.y});
+      }
+      auto raw_pts = draw_spline(other_pts);
+
+      auto pts = this->transform_to_pts(raw_pts);
+
+      this->fig.points = pts;
+
+      this->launch_debugger();
     }
 
-    for (auto [x, y, c] : pts) {
-      this->points.push_back({x, y, int(255 * c)});
-    }
-  } else {
-    this->points = {};
+    break;
+  }
+  default: {
+    break;
+  }
   }
 }
-FRLDataHandler::~FRLDataHandler() { std::cout << "FRLine handler out...\n"; }
-
-SRLDataHandler::SRLDataHandler(int type) {
-
-  std::vector<std::tuple<int, int, double>> pts = {};
-
-  switch (type) {
-  case 0: {
-    DynamicDialogue dia(nullptr, "Circle dialogue", {"R", "x", "y"});
-    dia.exec();
-    int R = dia.get_spin_by_name("R");
-    int x = dia.get_spin_by_name("x");
-    int y = dia.get_spin_by_name("y");
-    pts = draw_circle(R, x, y);
-
-    break;
-  }
-  case 1: {
-    DynamicDialogue dia(nullptr, "Elipsis dialogue", {"a", "b", "x", "y"});
-    dia.exec();
-    int a = dia.get_spin_by_name("a");
-    int b = dia.get_spin_by_name("b");
-    int x = dia.get_spin_by_name("x");
-    int y = dia.get_spin_by_name("y");
-    pts = draw_elipsis(a, b, x, y);
-    break;
-  }
-  case 2: {
-    DynamicDialogue dia(nullptr, "Parabola dialogue", {"p", "x", "y"});
-    dia.exec();
-    int p = dia.get_spin_by_name("p");
-    int x = dia.get_spin_by_name("x");
-    int y = dia.get_spin_by_name("y");
-    pts = draw_parabola(x, y, p);
-    break;
-  }
-  case 3: {
-    DynamicDialogue dia(nullptr, "Hyperbola dialogue", {"a", "b", "x", "y"});
-    dia.exec();
-    int a = dia.get_spin_by_name("a");
-    int b = dia.get_spin_by_name("b");
-    int x = dia.get_spin_by_name("x");
-    int y = dia.get_spin_by_name("y");
-    pts = draw_hyperbola(x, y, a, b);
-    break;
-  }
-  }
-  for (auto [x, y, c] : pts) {
-    this->points.push_back({x, y, int(255 * c)});
-  }
-}
-SRLDataHandler::~SRLDataHandler() { std::cout << "SRLine handler out...\n"; }
-
-ARDataHandler::ARDataHandler(int type) {
-  std::vector<std::tuple<int, int, double>> pts = {};
-
-  switch (type) {
-  case 0: {
-    DynamicDialogue dia(nullptr, "Hermit dialogue", {}, "", {},
-                        {"P1", "Force1", "P2", "Force2"});
-    dia.exec();
-    pts =
-        drawHermite(dia.get_line_by_name("P1"), dia.get_line_by_name("Force1"),
-                    dia.get_line_by_name("P2"), dia.get_line_by_name("Force2"));
-    break;
-  }
-  case 1: {
-    DynamicDialogue dia(nullptr, "Bezier dialogue", {}, "", {},
-                        {"P1", "P2", "P3", "P4"});
-    dia.exec();
-    pts = drawBezier(dia.get_line_by_name("P1"), dia.get_line_by_name("P2"),
-                     dia.get_line_by_name("P3"), dia.get_line_by_name("P4"));
-
-    break;
-  }
-  case 2: {
-    DynamicDialogue dia(nullptr, "Bezier dialogue", {}, "", {}, {"Points"},
-                        false);
-    dia.exec();
-    pts = drawBSpline(dia.get_lines());
-    break;
-  }
-  }
-
-  for (auto [x, y, c] : pts) {
-    this->points.push_back({x, y, int(255 * c)});
-  }
-}
-ARDataHandler::~ARDataHandler() { std::cout << "ARLine handler out...\n"; }

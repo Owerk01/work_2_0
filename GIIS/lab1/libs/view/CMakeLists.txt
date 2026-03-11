@@ -1,7 +1,7 @@
 add_library(view 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/window.cpp 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/canvas.cpp 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/dynamic_dia.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/dynamic_dia.cpp 
     ${CMAKE_CURRENT_SOURCE_DIR}/include/canvas.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/dynamic_dia.h
 )
