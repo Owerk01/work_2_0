@@ -272,6 +272,12 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
                 [this]() { this->data_handler->move_last_3D('d'); });
   new QShortcut(QKeySequence(Qt::Key_Down), this,
                 [this]() { this->data_handler->move_last_3D('u'); });
+  new QShortcut(QKeySequence(Qt::Key_F10), this, [this]() {
+    bool d = this->debugger->get_debug();
+    if (d) {
+      this->debugger->begin_debug();
+    }
+  });
 }
 
 MainWindow::~MainWindow() {
@@ -307,6 +313,7 @@ void MainWindow::on_help() {
       "8. To draw a tetrahedron - set the first vertex point and edge length\n"
       "\n"
       "Useful shortcuts:\n"
+      "'F10' - debug step\n"
       "'+' - increase grid size\n"
       "'-' - decrease grid size\n"
       "'x' - rotate 3D object in x axis\n"

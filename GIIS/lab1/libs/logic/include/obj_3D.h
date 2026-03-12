@@ -3,10 +3,10 @@
 #include <tuple>
 #include <vector>
 
-#define ROTATE_ANGLE 3.0f
+#define ROTATE_ANGLE 6.0f
 
-#define UPSCALE_F 1.2f
-#define DOWNSCALE_F 0.8f
+#define UPSCALE_F 1.1f
+#define DOWNSCALE_F 0.9f
 
 #define PERSPECTIVE_FACTOR 1000.0f
 
