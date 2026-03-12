@@ -38,6 +38,9 @@ struct Point {
   int x = 0;
   int y = 0;
   int z = 0;
+  double presize_x = 0;
+  double presize_y = 0;
+  double presize_z = 0;
   uint8_t r = 0;
   uint8_t g = 0;
   uint8_t b = 0;

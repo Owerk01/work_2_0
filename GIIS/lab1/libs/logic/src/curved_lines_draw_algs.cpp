@@ -6,8 +6,8 @@
 
 std::vector<std::tuple<int, int, double>> draw_circle(int R, int c_x, int c_y) {
   using namespace std;
-  cout << "\nInit circle drawing. R: " << R << ", center x: " << c_x
-       << ", center y: " << c_y << "\n";
+  // cout << "\nInit circle drawing. R: " << R << ", center x: " << c_x
+  //      << ", center y: " << c_y << "\n";
 
   vector<tuple<int, int, double>> points = {};
 
@@ -49,8 +49,8 @@ std::vector<std::tuple<int, int, double>> draw_circle(int R, int c_x, int c_y) {
       err = err + 2.0 * x - 2 * y + 2;
     }
     points.emplace_back(x, y, 0.0);
-    cout << "x: " << x << ", y: " << y << ", err (delta): " << err
-         << ", lambda: " << lambda << "\n";
+    // cout << "x: " << x << ", y: " << y << ", err (delta): " << err
+    //      << ", lambda: " << lambda << "\n";
   }
 
   int sz = points.size();
@@ -75,8 +75,8 @@ std::vector<std::tuple<int, int, double>> draw_circle(int R, int c_x, int c_y) {
 std::vector<std::tuple<int, int, double>> draw_elipsis(int a, int b, int c_x,
                                                        int c_y) {
   using namespace std;
-  cout << "\nInit elipsis drawing. a: " << a << ", b: " << b
-       << ", center x: " << c_x << ", center y: " << c_y << "\n";
+  // cout << "\nInit elipsis drawing. a: " << a << ", b: " << b
+  //      << ", center x: " << c_x << ", center y: " << c_y << "\n";
 
   vector<tuple<int, int, double>> points = {};
 
@@ -118,8 +118,8 @@ std::vector<std::tuple<int, int, double>> draw_elipsis(int a, int b, int c_x,
       err = err + pow(b, 2) * (2.0 * x + 1) + pow(a, 2) * (1 - 2.0 * y);
     }
     points.emplace_back(x, y, 0.0);
-    cout << "x: " << x << ", y: " << y << ", err (delta): " << err
-         << ", lambda: " << lambda << "\n";
+    // cout << "x: " << x << ", y: " << y << ", err (delta): " << err
+    //      << ", lambda: " << lambda << "\n";
   }
 
   int sz = points.size();
@@ -160,13 +160,13 @@ std::vector<std::tuple<int, int, double>> draw_hyperbola(int c_x, int c_y,
 
   double d1 = static_cast<double>(b2) - static_cast<double>(a2) * 0.75;
 
-  cout << "\nInit hyperbola drawing. a: " << a << ", center x: " << c_x
-       << ", center y: " << c_y << "\n";
+  // cout << "\nInit hyperbola drawing. a: " << a << ", center x: " << c_x
+  //      << ", center y: " << c_y << "\n";
 
   while (static_cast<double>(b2) * x > static_cast<double>(a2) * y) {
     points.emplace_back(x0 + x, y0 + y, 0.0);
 
-    cout << "Hyperbola Region 1: (" << x << ", " << y << ")\n";
+    // cout << "Hyperbola Region 1: (" << x << ", " << y << ")\n";
 
     if (d1 < 0) {
       d1 += static_cast<double>(b2) * (2 * y + 3);
@@ -188,7 +188,7 @@ std::vector<std::tuple<int, int, double>> draw_hyperbola(int c_x, int c_y,
   while (x < 500) {
     points.emplace_back(x0 + x, y0 + y, 0.0);
 
-    cout << "Hyperbola Region 2: (" << x << ", " << y << ")\n";
+    // cout << "Hyperbola Region 2: (" << x << ", " << y << ")\n";
 
     if (d2 > 0) {
       d2 -= static_cast<double>(a2) * (2 * x - 3);
@@ -223,13 +223,13 @@ std::vector<std::tuple<int, int, double>> draw_parabola(int c_x, int c_y,
   int y = 0;
   double d = 1.0 - 2.0 * static_cast<double>(p);
 
-  cout << "\nInit parabola drawing. p: " << p << ", center x: " << c_x
-       << ", center y: " << c_y << "\n";
+  // cout << "\nInit parabola drawing. p: " << p << ", center x: " << c_x
+  //      << ", center y: " << c_y << "\n";
 
   while (x * x < 4 * p * y) {
     points.emplace_back(x0 + x, y0 + y, 0.0);
 
-    cout << "Parabola Region 1: (" << x << ", " << y << ")\n";
+    // cout << "Parabola Region 1: (" << x << ", " << y << ")\n";
 
     if (d < 0) {
       d += 2 * x + 3;
@@ -244,7 +244,7 @@ std::vector<std::tuple<int, int, double>> draw_parabola(int c_x, int c_y,
   while (y < 10000) {
     points.emplace_back(x0 + x, y0 + y, 0.0);
 
-    cout << "Parabola Region 2: (" << x << ", " << y << ")\n";
+    // cout << "Parabola Region 2: (" << x << ", " << y << ")\n";
 
     if (d2 > 0) {
       d2 += -4.0 * p + 2;

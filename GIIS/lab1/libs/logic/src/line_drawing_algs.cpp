@@ -29,11 +29,12 @@ std::vector<std::tuple<int, int, double>> draw_CDA(int x1, int y1, int x2,
 
   points.back() = {x2, y2, 0};
 
-  cout << "Points of CDA:\n";
-  for (auto trio : points) {
-    cout << "(" << get<0>(trio) << ", " << get<1>(trio) << ", " << get<2>(trio)
-         << ")\n";
-  }
+  // cout << "Points of CDA:\n";
+  // for (auto trio : points) {
+  //   cout << "(" << get<0>(trio) << ", " << get<1>(trio) << ", " <<
+  //   get<2>(trio)
+  //        << ")\n";
+  // }
 
   return points;
 }
@@ -72,11 +73,12 @@ std::vector<std::tuple<int, int, double>> draw_bresenham(int x1, int y1, int x2,
     }
   }
 
-  cout << "\nPoints of Brezenham:\n";
-  for (auto trio : points) {
-    cout << "(" << get<0>(trio) << ", " << get<1>(trio) << ", " << get<2>(trio)
-         << ")\n";
-  }
+  // cout << "\nPoints of Brezenham:\n";
+  // for (auto trio : points) {
+  //   cout << "(" << get<0>(trio) << ", " << get<1>(trio) << ", " <<
+  //   get<2>(trio)
+  //        << ")\n";
+  // }
 
   return points;
 }
@@ -134,12 +136,13 @@ std::vector<std::tuple<int, int, double>> draw_wu(int x1, int y1, int x2,
   }
 
   points.back() = {x2, y2, 0};
+  // cout << "\nPoints of Wu:\n";
+  // for (auto trio : points) {
+  //   cout << "(" << get<0>(trio) << ", " << get<1>(trio) << ", " <<
+  //   get<2>(trio)
+  //        << ")\n";
+  // }
 
-  cout << "\nPoints of Wu:\n";
-  for (auto trio : points) {
-    cout << "(" << get<0>(trio) << ", " << get<1>(trio) << ", " << get<2>(trio)
-         << ")\n";
-  }
 
   return points;
 }

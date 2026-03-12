@@ -68,6 +68,14 @@ std::vector<Point> DataHandler::connect_points(Figure f) {
     }
     case GType::Tetrahedron: {
       if (f.points.size() == 4) {
+
+        for (int i = 0; i < 4; i++) {
+          for (int j = i + 1; j < 4; j++) {
+            this->append(connected, this->transform_to_pts(draw_CDA(
+                                        f.points[i].x, f.points[i].y,
+                                        f.points[j].x, f.points[j].y)));
+          }
+        }
       }
       break;
     }
@@ -114,12 +122,16 @@ std::vector<Point> DataHandler::transform_to_pts(
   return pts;
 }
 
-std::vector<Point>
-DataHandler::transform_to_pts(std::vector<std::tuple<int, int, int>> raw_pts) {
+std::vector<Point> DataHandler::transform_to_pts(tuple_vector raw_pts) {
   std::vector<Point> pts;
 
   for (auto [x, y, z] : raw_pts) {
-    pts.push_back({x, y, z, 0});
+    Point p = {static_cast<int>(x), static_cast<int>(y), static_cast<int>(z),
+               0};
+    p.presize_x = x;
+    p.presize_y = y;
+    p.presize_z = z;
+    pts.push_back(p);
   }
 
   return pts;
@@ -287,15 +299,56 @@ void DataHandler::add_point(Point pt) {
       // edge length
       int l = std::round(std::sqrt(std::pow(x0 - this->fig.points[1].x, 2) +
                                    std::pow(y0 - this->fig.points[1].y, 2)));
+
       this->fig.points.clear();
-      this->fig.points.push_back({x0, y0, 0, 0});
-      this->fig.points.push_back({x0, y0, l, 0});
-      this->fig.points.push_back({x0, y0 + l, l, 0});
-      this->fig.points.push_back({x0, y0 + l, 0, 0});
-      this->fig.points.push_back({x0 + l, y0, 0, 0});
-      this->fig.points.push_back({x0 + l, y0, l, 0});
-      this->fig.points.push_back({x0 + l, y0 + l, l, 0});
-      this->fig.points.push_back({x0 + l, y0 + l, 0, 0});
+
+      Point p = {x0, y0, 0, 0};
+      p.presize_x = x0;
+      p.presize_y = y0;
+      p.presize_z = 0;
+      this->fig.points.push_back(p);
+
+      p = {x0, y0, l, 0};
+      p.presize_x = x0;
+      p.presize_y = y0;
+      p.presize_z = l;
+      this->fig.points.push_back(p);
+
+      p = {x0, y0 + l, l, 0};
+      p.presize_x = x0;
+      p.presize_y = y0 + l;
+      p.presize_z = l;
+      this->fig.points.push_back(p);
+
+      p = {x0, y0 + l, 0, 0};
+      p.presize_x = x0;
+      p.presize_y = y0 + l;
+      p.presize_z = 0;
+      this->fig.points.push_back(p);
+
+      p = {x0 + l, y0, 0, 0};
+      p.presize_x = x0 + l;
+      p.presize_y = y0;
+      p.presize_z = 0;
+      this->fig.points.push_back(p);
+
+      p = {x0 + l, y0, l, 0};
+      p.presize_x = x0 + l;
+      p.presize_y = y0;
+      p.presize_z = l;
+      this->fig.points.push_back(p);
+
+      p = {x0 + l, y0 + l, l, 0};
+      p.presize_x = x0 + l;
+      p.presize_y = y0 + l;
+      p.presize_z = l;
+      this->fig.points.push_back(p);
+
+      p = {x0 + l, y0 + l, 0, 0};
+      p.presize_x = x0 + l;
+      p.presize_y = y0 + l;
+      p.presize_z = 0;
+      this->fig.points.push_back(p);
 
       this->counter++;
       this->fig.id = this->counter;
@@ -305,6 +358,59 @@ void DataHandler::add_point(Point pt) {
       this->launch_3D_debugger();
     }
 
+    break;
+  }
+  case GType::Tetrahedron: {
+    if (sz == 2) {
+      int x0 = this->fig.points[0].x;
+      int y0 = this->fig.points[0].y;
+
+      // edge length
+      int l = std::round(std::sqrt(std::pow(x0 - this->fig.points[1].x, 2) +
+                                   std::pow(y0 - this->fig.points[1].y, 2)));
+
+      this->fig.points.clear();
+
+      double h = l * sqrt(2.0 / 3.0);
+      double r_base = l / sqrt(3.0);
+      double r_center = l / (2.0 * sqrt(3.0));
+
+      Point p1 = {x0, y0, 0, 0};
+      p1.presize_x = x0;
+      p1.presize_y = y0;
+      p1.presize_z = 0;
+      this->fig.points.push_back(p1);
+
+      Point p2 = {x0 + l, y0, 0, 0};
+      p2.presize_x = x0 + l;
+      p2.presize_y = y0;
+      p2.presize_z = 0;
+      this->fig.points.push_back(p2);
+
+      Point p3 = {static_cast<int>(x0 + l / 2.0),
+                  static_cast<int>(y0 + l * sqrt(3.0) / 2.0), 0, 0};
+      p3.presize_x = x0 + l / 2.0;
+      p3.presize_y = y0 + l * sqrt(3.0) / 2.0;
+      p3.presize_z = 0;
+      this->fig.points.push_back(p3);
+
+      double center_x = (x0 + (x0 + l) + (x0 + l / 2.0)) / 3.0;
+      double center_y = (y0 + y0 + (y0 + l * sqrt(3.0) / 2.0)) / 3.0;
+
+      Point p4 = {static_cast<int>(center_x), static_cast<int>(center_y),
+                  static_cast<int>(h), 0};
+      p4.presize_x = center_x;
+      p4.presize_y = center_y;
+      p4.presize_z = h;
+      this->fig.points.push_back(p4);
+
+      this->counter++;
+      this->fig.id = this->counter;
+      this->figures.push_back(this->fig);
+      this->fig.points.clear();
+
+      this->launch_3D_debugger();
+    }
     break;
   }
   default: {
@@ -318,15 +424,92 @@ void DataHandler::rotate_last_3D(char axis) {
       (this->figures[this->figures.size() - 1].fig_type == GType::Cube ||
        this->figures[this->figures.size() - 1].fig_type ==
            GType::Tetrahedron)) {
+
     int idx = this->figures.size() - 1;
-    auto old_pts = this->figures[idx].points;
-    std::vector<std::tuple<int, int, int>> tmp_pts;
-    for (auto e : old_pts) {
-      tmp_pts.push_back({e.x, e.y, e.z});
+
+    tuple_vector old_pts;
+
+    for (auto e : this->figures[idx].points) {
+      old_pts.push_back({e.presize_x, e.presize_y, e.presize_z});
     }
-    auto new_pts = rotate_3D(tmp_pts, axis);
+
     this->figures[idx].points.clear();
-    this->figures[idx].points = this->transform_to_pts(new_pts);
+    this->figures[idx].points =
+        this->transform_to_pts(rotate_3D(old_pts, axis));
+    this->launch_3D_debugger();
+  }
+}
+
+void DataHandler::scale_last_3D(char method) {
+  if (this->figures.size() > 0 &&
+      (this->figures[this->figures.size() - 1].fig_type == GType::Cube ||
+       this->figures[this->figures.size() - 1].fig_type ==
+           GType::Tetrahedron)) {
+
+    int idx = this->figures.size() - 1;
+
+    tuple_vector old_pts;
+
+    for (auto e : this->figures[idx].points) {
+      old_pts.push_back({e.presize_x, e.presize_y, e.presize_z});
+    }
+
+    this->figures[idx].points.clear();
+    this->figures[idx].points = this->transform_to_pts(scale(old_pts, method));
+    this->launch_3D_debugger();
+  }
+}
+
+void DataHandler::perspective_last_3D() {
+  if (this->figures.size() > 0 &&
+      (this->figures[this->figures.size() - 1].fig_type == GType::Cube ||
+       this->figures[this->figures.size() - 1].fig_type ==
+           GType::Tetrahedron)) {
+
+    int idx = this->figures.size() - 1;
+
+    tuple_vector old_pts;
+
+    for (auto e : this->figures[idx].points) {
+      old_pts.push_back({e.presize_x, e.presize_y, e.presize_z});
+    }
+
+    this->figures[idx].points.clear();
+    std::vector<Point> pts;
+    auto pp = perspective(old_pts);
+
+    for (int i = 0; i < old_pts.size(); i++) {
+      auto [x, y, z] = pp[i];
+      auto [x1, y1, z1] = old_pts[i];
+      Point p = {static_cast<int>(x), static_cast<int>(y), static_cast<int>(z),
+                 0};
+      p.presize_x = x1;
+      p.presize_y = y1;
+      p.presize_z = z1;
+      pts.push_back(p);
+    }
+    this->figures[idx].points = pts;
+    this->launch_3D_debugger();
+  }
+}
+
+void DataHandler::move_last_3D(char direction) {
+  if (this->figures.size() > 0 &&
+      (this->figures[this->figures.size() - 1].fig_type == GType::Cube ||
+       this->figures[this->figures.size() - 1].fig_type ==
+           GType::Tetrahedron)) {
+
+    int idx = this->figures.size() - 1;
+
+    tuple_vector old_pts;
+
+    for (auto e : this->figures[idx].points) {
+      old_pts.push_back({e.presize_x, e.presize_y, e.presize_z});
+    }
+
+    this->figures[idx].points.clear();
+    this->figures[idx].points =
+        this->transform_to_pts(move_fig(old_pts, direction));
     this->launch_3D_debugger();
   }
 }

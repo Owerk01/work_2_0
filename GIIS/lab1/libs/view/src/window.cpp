@@ -20,6 +20,7 @@
 #include <QToolButton>
 #include <QWidget>
 #include <iostream>
+#include <qnamespace.h>
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
 
@@ -257,6 +258,20 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
                 [this]() { this->data_handler->rotate_last_3D('y'); });
   new QShortcut(QKeySequence("z"), this,
                 [this]() { this->data_handler->rotate_last_3D('z'); });
+  new QShortcut(QKeySequence("u"), this,
+                [this]() { this->data_handler->scale_last_3D('u'); });
+  new QShortcut(QKeySequence("d"), this,
+                [this]() { this->data_handler->scale_last_3D('d'); });
+  new QShortcut(QKeySequence("p"), this,
+                [this]() { this->data_handler->perspective_last_3D(); });
+  new QShortcut(QKeySequence(Qt::Key_Right), this,
+                [this]() { this->data_handler->move_last_3D('r'); });
+  new QShortcut(QKeySequence(Qt::Key_Left), this,
+                [this]() { this->data_handler->move_last_3D('l'); });
+  new QShortcut(QKeySequence(Qt::Key_Up), this,
+                [this]() { this->data_handler->move_last_3D('d'); });
+  new QShortcut(QKeySequence(Qt::Key_Down), this,
+                [this]() { this->data_handler->move_last_3D('u'); });
 }
 
 MainWindow::~MainWindow() {
@@ -297,8 +312,9 @@ void MainWindow::on_help() {
       "'x' - rotate 3D object in x axis\n"
       "'y' - rotate 3D object in y axis\n"
       "'z' - rotate 3D object in z axis\n"
-      "'b' - scale 3D object up\n"
-      "'s' - scale 3D object down\n"
+      "'u' - scale 3D object up\n"
+      "'d' - scale 3D object down\n"
+      "'p' - perspective view\n"
       "arrows - move 3D object\n");
 }
 
