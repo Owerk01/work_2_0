@@ -37,13 +37,17 @@ enum class GType {
 struct Point {
   int x = 0;
   int y = 0;
+  int z = 0;
   uint8_t r = 0;
   uint8_t g = 0;
   uint8_t b = 0;
   Point() {}
   Point(int x, int y, uint8_t c) : x(x), y(y), r(c), g(c), b(c) {}
+  Point(int x, int y, int z, uint8_t c) : x(x), y(y), z(z), r(c), g(c), b(c) {}
   Point(int x, int y, uint8_t r, uint8_t g, uint8_t b)
-      : x(x), y(y), r(r), g(g), b(b) {}
+      : x(x), y(y), z(0), r(r), g(g), b(b) {}
+  Point(int x, int y, int z, uint8_t r, uint8_t g, uint8_t b)
+      : x(x), y(y), z(z), r(r), g(g), b(b) {}
 };
 
 struct Figure {

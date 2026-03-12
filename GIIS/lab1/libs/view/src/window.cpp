@@ -250,6 +250,13 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
     sz--;
     canvas->set_px_size(sz);
   });
+
+  new QShortcut(QKeySequence("x"), this,
+                [this]() { this->data_handler->rotate_last_3D('x'); });
+  new QShortcut(QKeySequence("y"), this,
+                [this]() { this->data_handler->rotate_last_3D('y'); });
+  new QShortcut(QKeySequence("z"), this,
+                [this]() { this->data_handler->rotate_last_3D('z'); });
 }
 
 MainWindow::~MainWindow() {

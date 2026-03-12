@@ -13,6 +13,7 @@ public:
   void set_figure(Figure fig);
 
   bool get_debug() const;
+  Canvas *get_canvas();
 
   bool step();
   void reset();
