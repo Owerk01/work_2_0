@@ -331,53 +331,21 @@ void DataHandler::add_point(Point pt) {
 
       this->fig.points.clear();
 
-      Point p = {x0, y0, 0, 0};
-      p.presize_x = x0;
-      p.presize_y = y0;
-      p.presize_z = 0;
-      this->fig.points.push_back(p);
+      this->fig.points.push_back({x0, y0, 0, 0});
 
-      p = {x0, y0, l, 0};
-      p.presize_x = x0;
-      p.presize_y = y0;
-      p.presize_z = l;
-      this->fig.points.push_back(p);
+      this->fig.points.push_back({x0, y0, l, 0});
 
-      p = {x0, y0 + l, l, 0};
-      p.presize_x = x0;
-      p.presize_y = y0 + l;
-      p.presize_z = l;
-      this->fig.points.push_back(p);
+      this->fig.points.push_back({x0, y0 + l, l, 0});
 
-      p = {x0, y0 + l, 0, 0};
-      p.presize_x = x0;
-      p.presize_y = y0 + l;
-      p.presize_z = 0;
-      this->fig.points.push_back(p);
+      this->fig.points.push_back({x0, y0 + l, 0, 0});
 
-      p = {x0 + l, y0, 0, 0};
-      p.presize_x = x0 + l;
-      p.presize_y = y0;
-      p.presize_z = 0;
-      this->fig.points.push_back(p);
+      this->fig.points.push_back({x0 + l, y0, 0, 0});
 
-      p = {x0 + l, y0, l, 0};
-      p.presize_x = x0 + l;
-      p.presize_y = y0;
-      p.presize_z = l;
-      this->fig.points.push_back(p);
+      this->fig.points.push_back({x0 + l, y0, l, 0});
 
-      p = {x0 + l, y0 + l, l, 0};
-      p.presize_x = x0 + l;
-      p.presize_y = y0 + l;
-      p.presize_z = l;
-      this->fig.points.push_back(p);
+      this->fig.points.push_back({x0 + l, y0 + l, l, 0});
 
-      p = {x0 + l, y0 + l, 0, 0};
-      p.presize_x = x0 + l;
-      p.presize_y = y0 + l;
-      p.presize_z = 0;
-      this->fig.points.push_back(p);
+      this->fig.points.push_back({x0 + l, y0 + l, 0, 0});
 
       this->update_figure();
       this->launch_debugger();
@@ -400,34 +368,20 @@ void DataHandler::add_point(Point pt) {
       double r_base = l / sqrt(3.0);
       double r_center = l / (2.0 * sqrt(3.0));
 
-      Point p1 = {x0, y0, 0, 0};
-      p1.presize_x = x0;
-      p1.presize_y = y0;
-      p1.presize_z = 0;
-      this->fig.points.push_back(p1);
+      this->fig.points.push_back({x0, y0, 0, 0});
 
-      Point p2 = {x0 + l, y0, 0, 0};
-      p2.presize_x = x0 + l;
-      p2.presize_y = y0;
-      p2.presize_z = 0;
-      this->fig.points.push_back(p2);
+      this->fig.points.push_back({x0 + l, y0, 0, 0});
 
-      Point p3 = {static_cast<int>(x0 + l / 2.0),
-                  static_cast<int>(y0 + l * sqrt(3.0) / 2.0), 0, 0};
-      p3.presize_x = x0 + l / 2.0;
-      p3.presize_y = y0 + l * sqrt(3.0) / 2.0;
-      p3.presize_z = 0;
-      this->fig.points.push_back(p3);
+      this->fig.points.push_back({static_cast<int>(x0 + l / 2.0),
+                                  static_cast<int>(y0 + l * sqrt(3.0) / 2.0), 0,
+                                  0});
 
       double center_x = (x0 + (x0 + l) + (x0 + l / 2.0)) / 3.0;
       double center_y = (y0 + y0 + (y0 + l * sqrt(3.0) / 2.0)) / 3.0;
 
-      Point p4 = {static_cast<int>(center_x), static_cast<int>(center_y),
-                  static_cast<int>(h), 0};
-      p4.presize_x = center_x;
-      p4.presize_y = center_y;
-      p4.presize_z = h;
-      this->fig.points.push_back(p4);
+      this->fig.points.push_back({static_cast<int>(center_x),
+                                  static_cast<int>(center_y),
+                                  static_cast<int>(h), 0});
 
       this->update_figure();
       this->launch_debugger();
