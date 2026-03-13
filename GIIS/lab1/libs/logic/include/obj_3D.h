@@ -29,7 +29,8 @@ void rotation_x_matrix_row_major(double matrix[4][4], double angle);
 void rotation_y_matrix_row_major(double matrix[4][4], double angle);
 void rotation_z_matrix_row_major(double matrix[4][4], double angle);
 
-tuple_vector rotate_3D(tuple_vector pts, char axis = 'x');
+tuple_vector rotate_3D(tuple_vector pts, char axis, bool use_center = false,
+                       std::tuple<double, double, double> center = {});
 
 tuple_vector rotate_3D_around_center(tuple_vector pts, double center_x,
                                      double center_y, double center_z,
@@ -39,12 +40,14 @@ tuple_vector rotate_3D_around_center(tuple_vector pts, double center_x,
 void scale_matrix_row_major(double matrix[4][4], double sx, double sy,
                             double sz);
 
-tuple_vector scale(tuple_vector pts, char method);
+tuple_vector scale(tuple_vector pts, char method, bool use_center = false,
+                   std::tuple<double, double, double> center = {});
 
 tuple_vector scale_around_center(tuple_vector pts, double center_x,
                                  double center_y, double center_z, double sx,
                                  double sy, double sz);
 
-tuple_vector perspective(tuple_vector pts);
+tuple_vector perspective(tuple_vector pts, bool use_center = false,
+                         std::tuple<double, double, double> center = {});
 
 tuple_vector move_fig(tuple_vector pts, char direction);

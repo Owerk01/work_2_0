@@ -14,7 +14,10 @@ public:
   void append(std::vector<Point> &parent, std::vector<Point> ch);
   void reset();
   void add_point(Point pt);
+  int get_current_active_idx() const;
+  void set_current_active_idx(int idx);
   void set_figure(Figure fig);
+  void update_figure();
 
   Figure get_figure() const;
 
@@ -25,7 +28,6 @@ public:
   std::vector<Point> connect_points(Figure f);
 
   void launch_debugger();
-  void launch_3D_debugger();
   void rotate_last_3D(char axis);
   void scale_last_3D(char method);
   void perspective_last_3D();
@@ -33,6 +35,7 @@ public:
 
 private:
   int counter;
+  int current_active_idx;
   Figure fig;
   std::vector<Figure> figures;
   Debugger *debugger;

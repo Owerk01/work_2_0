@@ -192,11 +192,23 @@ tuple_vector rotate_3D_around_center(tuple_vector pts, double center_x,
   return result;
 }
 
-tuple_vector rotate_3D(tuple_vector pts, char axis) {
+tuple_vector rotate_3D(tuple_vector pts, char axis, bool use_center,
+                       std::tuple<double, double, double> center) {
   if (pts.empty())
     return pts;
 
-  auto [center_x, center_y, center_z] = find_center(pts);
+  double center_x, center_y, center_z;
+  if (use_center) {
+    auto [x1, y1, z1] = center;
+    center_x = x1;
+    center_y = y1;
+    center_z = z1;
+  } else {
+    auto [x1, y1, z1] = find_center(pts);
+        center_x = x1;
+    center_y = y1;
+    center_z = z1;
+  }
 
   return rotate_3D_around_center(pts, center_x, center_y, center_z, axis,
                                  ROTATE_ANGLE);
@@ -258,11 +270,23 @@ tuple_vector scale_around_center(tuple_vector pts, double center_x,
   return result;
 }
 
-tuple_vector scale(tuple_vector pts, char method) {
+tuple_vector scale(tuple_vector pts, char method, bool use_center,
+                   std::tuple<double, double, double> center) {
   if (pts.empty())
     return pts;
 
-  auto [center_x, center_y, center_z] = find_center(pts);
+  double center_x, center_y, center_z;
+  if (use_center) {
+    auto [x1, y1, z1] = center;
+    center_x = x1;
+    center_y = y1;
+    center_z = z1;
+  } else {
+    auto [x1, y1, z1] = find_center(pts);
+        center_x = x1;
+    center_y = y1;
+    center_z = z1;
+  }
 
   double sx, sy, sz;
 
@@ -287,11 +311,23 @@ tuple_vector scale(tuple_vector pts, char method) {
   return scale_around_center(pts, center_x, center_y, center_z, sx, sy, sz);
 }
 
-tuple_vector perspective(tuple_vector pts) {
+tuple_vector perspective(tuple_vector pts, bool use_center,
+                         std::tuple<double, double, double> center) {
   if (pts.empty())
     return pts;
 
-  auto [center_x, center_y, center_z] = find_center(pts);
+  double center_x, center_y, center_z;
+ if (use_center) {
+    auto [x1, y1, z1] = center;
+    center_x = x1;
+    center_y = y1;
+    center_z = z1;
+  } else {
+    auto [x1, y1, z1] = find_center(pts);
+        center_x = x1;
+    center_y = y1;
+    center_z = z1;
+  }
 
   tuple_vector result;
 
