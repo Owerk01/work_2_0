@@ -8,6 +8,7 @@
 #include <QBoxLayout>
 #include <QCheckBox>
 #include <QDebug>
+#include <QInputDialog>
 #include <QLabel>
 #include <QMainWindow>
 #include <QMenu>
@@ -20,7 +21,6 @@
 #include <QToolButton>
 #include <QWidget>
 #include <iostream>
-#include <qnamespace.h>
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
 
@@ -69,9 +69,13 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
   QAction *program_about = new QAction("About", this);
   this->connect(program_about, &QAction::triggered, this, &MainWindow::on_info);
 
+  QAction *control_point_setting = new QAction("Control points", this);
+  this->connect(control_point_setting, &QAction::triggered, this,
+                &MainWindow::on_control_points);
+
   QAction *grid_size_setting = new QAction("Cell size", this);
-  this->connect(grid_size_setting, &QAction::triggered, canvas,
-                &Canvas::on_size_update);
+  this->connect(grid_size_setting, &QAction::triggered, this,
+                &MainWindow::on_size_update);
 
   QAction *grid_show_setting = new QAction("Show grid", this);
   grid_show_setting->setCheckable(true);
@@ -83,6 +87,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
   file_menu->addAction(program_help);
   file_menu->addAction(program_about);
 
+  settings_menu->addAction(control_point_setting);
   settings_menu->addAction(grid_size_setting);
   settings_menu->addAction(grid_show_setting);
 
@@ -327,3 +332,27 @@ void MainWindow::on_help() {
 
 // connecting user clicks, in order to calculate when to launch algorithms
 void MainWindow::on_clicked_px(Point px) { this->data_handler->add_point(px); }
+
+void MainWindow::on_control_points() {
+  bool ok;
+  QString *max_size = new QString();
+  max_size->assign("Points (3 - 128):");
+
+  int n = QInputDialog::getInt(this, "Amount of control points", *max_size, 16,
+                               3, 128, 1, &ok);
+  if (ok) {
+    this->data_handler->set_control_points(n);
+  }
+}
+
+void MainWindow::on_size_update() {
+  bool ok;
+  QString *max_size = new QString();
+  max_size->assign("Size (1 - " + std::to_string(2 * CELL) + "):");
+
+  int n = QInputDialog::getInt(this, "Size of a grid cell", *max_size, 1, 1,
+                               2 * CELL, 1, &ok);
+  if (ok) {
+    this->debugger->get_canvas()->set_px_size(n);
+  }
+}

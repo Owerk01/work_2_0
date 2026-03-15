@@ -6,7 +6,8 @@
       "generator": "Ninja",
       "binaryDir": "${sourceDir}/build",
       "cacheVariables": {
-        "CMAKE_PREFIX_PATH": "/home/n25/Qt/6.10.2/gcc_64"
+        "CMAKE_PREFIX_PATH": "/home/n25/Qt/6.10.2/gcc_64",
+        "ENABLE_SANITIZERS": "OFF"
       }
     }
   ],

@@ -15,6 +15,8 @@ public slots:
   void on_help();
   void on_px_size_setting();
   void on_clicked_px(Point px);
+  void on_control_points();
+  void on_size_update();
 
 signals:
 private:

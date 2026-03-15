@@ -15,7 +15,7 @@
 
 DataHandler::DataHandler(Debugger *debugger, Figure f)
     : counter(0), debugger(debugger), figures({}), fig(f),
-      current_active_idx(CODE_ERROR) {}
+      current_active_idx(CODE_ERROR), control_points(4) {}
 
 DataHandler::~DataHandler() { std::cout << "Data handler out...\n"; }
 
@@ -27,7 +27,11 @@ void DataHandler::set_current_active_idx(int idx) {
     this->current_active_idx = idx;
   }
 }
-
+void DataHandler::set_control_points(int p) {
+  if (p >= 3) {
+    this->control_points = p;
+  }
+}
 void DataHandler::set_figure(Figure fig) { this->fig = fig; }
 Figure DataHandler::get_figure() const { return this->fig; }
 
@@ -313,7 +317,8 @@ void DataHandler::add_point(Point pt) {
     break;
   }
   case GType::BSpline: {
-    if (sz == 8) {
+    if ((sz == this->control_points && this->control_points > 3) ||
+        ((sz == 4 && this->control_points == 3))) {
       this->update_figure();
       this->launch_debugger();
     }

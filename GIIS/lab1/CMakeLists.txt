@@ -19,3 +19,16 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/libs/view)
 
 target_link_libraries(editoR PRIVATE Qt6::Widgets Qt6::Gui Qt6::Core)
 target_link_libraries(editoR PRIVATE helpers logic model view)
+
+if(ENABLE_SANITIZERS)
+    message(STATUS "Sanitizers enabled!")
+    target_compile_options(editoR PRIVATE 
+        -fsanitize=address 
+        -fno-omit-frame-pointer 
+        -g 
+        -O1
+    )
+    target_link_options(editoR PRIVATE 
+        -fsanitize=address
+    )
+endif()

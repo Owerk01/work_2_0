@@ -205,7 +205,7 @@ tuple_vector rotate_3D(tuple_vector pts, char axis, bool use_center,
     center_z = z1;
   } else {
     auto [x1, y1, z1] = find_center(pts);
-        center_x = x1;
+    center_x = x1;
     center_y = y1;
     center_z = z1;
   }
@@ -283,7 +283,7 @@ tuple_vector scale(tuple_vector pts, char method, bool use_center,
     center_z = z1;
   } else {
     auto [x1, y1, z1] = find_center(pts);
-        center_x = x1;
+    center_x = x1;
     center_y = y1;
     center_z = z1;
   }
@@ -317,14 +317,14 @@ tuple_vector perspective(tuple_vector pts, bool use_center,
     return pts;
 
   double center_x, center_y, center_z;
- if (use_center) {
+  if (use_center) {
     auto [x1, y1, z1] = center;
     center_x = x1;
     center_y = y1;
     center_z = z1;
   } else {
     auto [x1, y1, z1] = find_center(pts);
-        center_x = x1;
+    center_x = x1;
     center_y = y1;
     center_z = z1;
   }

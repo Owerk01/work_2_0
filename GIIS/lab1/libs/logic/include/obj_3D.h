@@ -10,7 +10,7 @@
 
 #define PERSPECTIVE_FACTOR 1000.0f
 
-#define MOVE_STEP 1.0f
+#define MOVE_STEP 2.0f
 
 typedef std::vector<std::tuple<double, double, double>> tuple_vector;
 

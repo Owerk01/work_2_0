@@ -21,7 +21,6 @@ public:
   int get_px_size() const;
 
 public slots:
-  void on_size_update();
   void on_clear();
   void on_grid_show();
 

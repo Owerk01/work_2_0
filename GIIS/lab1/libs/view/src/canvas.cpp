@@ -87,17 +87,6 @@ void Canvas::paintEvent(QPaintEvent *) {
   }
 }
 
-void Canvas::on_size_update() {
-  bool ok;
-  QString *max_size = new QString();
-  max_size->assign("Size (1 - " + std::to_string(2 * CELL) + "):");
-
-  int n = QInputDialog::getInt(this, "Size of a grid cell", *max_size, 1, 1,
-                               2 * CELL, 1, &ok);
-  if (ok) {
-    this->set_px_size(n);
-  }
-}
 
 void Canvas::on_clear() {
   this->pixels.clear();
