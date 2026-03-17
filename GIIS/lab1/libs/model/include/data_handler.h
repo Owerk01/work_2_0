@@ -13,11 +13,15 @@ public:
 
   void append(std::vector<Point> &parent, std::vector<Point> ch);
   void reset();
-  void add_point(Point pt);
+  void add_point(Point pt = {1});
   int get_current_active_idx() const;
   void set_current_active_idx(int idx);
+  int set_prev_active_idx() const;
+  void set_prev_active_idx(int idx);
   void set_figure(Figure fig);
   void set_control_points(int p);
+  int get_control_points() const;
+  std::vector<Figure> get_figures() const;
   void update_figure();
 
   Figure get_figure() const;
@@ -37,6 +41,7 @@ public:
 private:
   int counter;
   int current_active_idx;
+  int prev_active_idx;
   int control_points;
   Figure fig;
   std::vector<Figure> figures;

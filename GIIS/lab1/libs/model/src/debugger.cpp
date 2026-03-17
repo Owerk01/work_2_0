@@ -23,10 +23,10 @@ void Debugger::reset() {
 
 Canvas *Debugger::get_canvas() { return this->canvas; }
 bool Debugger::step() {
-  if (this->fig.points.size() > 1) {
+  if (this->fig.points.size() >= 1) {
     this->canvas->set_pixel(this->fig.points[step_i]);
     this->step_i++;
-    if (this->step_i == this->fig.points.size() - 1) {
+    if (this->step_i >= this->fig.points.size() - 1) {
       return false;
     } else {
       return true;

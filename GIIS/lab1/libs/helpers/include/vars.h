@@ -19,19 +19,24 @@
 #define MAX_WINDOW_HEIGHT                                                      \
   CANVAS_SIZE <= MIN_WINDOW_HEIGHT ? MIN_WINDOW_HEIGHT : CANVAS_SIZE
 
+#define CON_POINTS 8192
+
 enum class GType {
-  CDA = 0,
-  Bresenham = 1,
-  Wu = 2,
-  Circle = 3,
-  Elipsis = 4,
-  Parabola = 5,
-  Hyperbola = 6,
-  Hermit = 7,
-  Bezier = 8,
-  BSpline = 9,
-  Cube = 10,
-  Tetrahedron = 11
+  CDA,
+  Bresenham,
+  Wu,
+  Circle,
+  Elipsis,
+  Parabola,
+  Hyperbola,
+  Hermit,
+  Bezier,
+  BSpline,
+  Cube,
+  Tetrahedron,
+  Polygon,
+  ConvexPolygon,
+  Dot
 };
 
 struct Point {
@@ -44,7 +49,9 @@ struct Point {
   uint8_t r = 0;
   uint8_t g = 0;
   uint8_t b = 0;
+  bool is_temp = false;
   Point() {}
+  Point(bool tp) : is_temp(tp) {}
   Point(int x, int y, uint8_t c)
       : x(x), y(y), presize_x(static_cast<double>(x)),
         presize_y(static_cast<double>(y)), r(c), g(c), b(c) {}

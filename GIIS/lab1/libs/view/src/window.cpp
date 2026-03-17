@@ -2,23 +2,28 @@
 #include "canvas.h"
 #include "data_handler.h"
 #include "debugger.h"
+#include "misc.h"
 #include "vars.h"
 #include <QAction>
 #include <QApplication>
 #include <QBoxLayout>
 #include <QCheckBox>
 #include <QDebug>
+#include <QDialog>
 #include <QInputDialog>
 #include <QLabel>
+#include <QListWidget>
 #include <QMainWindow>
 #include <QMenu>
 #include <QMenuBar>
 #include <QMessageBox>
+#include <QPushButton>
 #include <QScrollArea>
 #include <QShortcut>
 #include <QTimer>
 #include <QToolBar>
 #include <QToolButton>
+#include <QVBoxLayout>
 #include <QWidget>
 #include <iostream>
 
@@ -69,9 +74,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
   QAction *program_about = new QAction("About", this);
   this->connect(program_about, &QAction::triggered, this, &MainWindow::on_info);
 
-  QAction *control_point_setting = new QAction("Control points", this);
-  this->connect(control_point_setting, &QAction::triggered, this,
-                &MainWindow::on_control_points);
+  QAction *active_figure_setting = new QAction("Set active figure", this);
+  this->connect(active_figure_setting, &QAction::triggered, this,
+                &MainWindow::on_show_figures_dialog);
 
   QAction *grid_size_setting = new QAction("Cell size", this);
   this->connect(grid_size_setting, &QAction::triggered, this,
@@ -87,7 +92,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
   file_menu->addAction(program_help);
   file_menu->addAction(program_about);
 
-  settings_menu->addAction(control_point_setting);
+  settings_menu->addAction(active_figure_setting);
   settings_menu->addAction(grid_size_setting);
   settings_menu->addAction(grid_show_setting);
 
@@ -101,6 +106,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
   clear_canvas_btn->setToolTip(
       "Clears workspace by filling it with white color");
   clear_canvas_btn->setMaximumWidth(4 * CELL);
+
+  QToolButton *dot_btn = new QToolButton(tool_bar);
+  dot_btn->setText("Dot");
+  dot_btn->setToolTip("Sets dot on canvas");
+  dot_btn->setMaximumWidth(4 * CELL);
 
   QCheckBox *debug_checkbox = new QCheckBox("Debug", tool_bar);
   debug_checkbox->setToolTip("Debug mode");
@@ -175,6 +185,25 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
   btn_3D->setPopupMode(QToolButton::InstantPopup);
   //
 
+  // button with popup, goddamn x4
+  QToolButton *btn_polygon = new QToolButton(tool_bar);
+  btn_polygon->setText("Polygon");
+  btn_polygon->setToolTip("Various polygon types");
+  btn_polygon->setMaximumWidth(4 * CELL);
+
+  QMenu *menu_polygon = new QMenu(btn_polygon);
+  menu_polygon->addAction("Polygon")->setData(static_cast<int>(GType::Polygon));
+  menu_polygon->addAction("Convex polygon")
+      ->setData(static_cast<int>(GType::ConvexPolygon));
+
+  btn_polygon->setMenu(menu_polygon);
+  btn_polygon->setPopupMode(QToolButton::InstantPopup);
+  //
+
+  tool_bar->addWidget(dot_btn);
+  this->connect(dot_btn, &QToolButton::clicked, this,
+                [this]() { this->data_handler->set_figure({GType::Dot}); });
+
   // algs buttons
   tool_bar->addWidget(frl_btn);
   this->connect(frl_menu, &QMenu::triggered, this, [this](QAction *act) {
@@ -196,6 +225,12 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
 
   tool_bar->addWidget(btn_3D);
   this->connect(menu_3D, &QMenu::triggered, this, [this](QAction *act) {
+    int id = act->data().toInt();
+    this->data_handler->set_figure({static_cast<GType>(id)});
+  });
+
+  tool_bar->addWidget(btn_polygon);
+  this->connect(menu_polygon, &QMenu::triggered, this, [this](QAction *act) {
     int id = act->data().toInt();
     this->data_handler->set_figure({static_cast<GType>(id)});
   });
@@ -283,6 +318,12 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
       this->debugger->begin_debug();
     }
   });
+  new QShortcut(QKeySequence(Qt::Key_A), this, [this]() {
+    this->data_handler->set_control_points(
+        this->data_handler->get_figure().points.size());
+    this->data_handler->add_point();
+    this->data_handler->set_control_points(CON_POINTS);
+  });
 }
 
 MainWindow::~MainWindow() {
@@ -319,6 +360,7 @@ void MainWindow::on_help() {
       "\n"
       "Useful shortcuts:\n"
       "'F10' - debug step\n"
+      "'a' - creates poly object with current control points\n"
       "'+' - increase grid size\n"
       "'-' - decrease grid size\n"
       "'x' - rotate 3D object in x axis\n"
@@ -333,18 +375,6 @@ void MainWindow::on_help() {
 // connecting user clicks, in order to calculate when to launch algorithms
 void MainWindow::on_clicked_px(Point px) { this->data_handler->add_point(px); }
 
-void MainWindow::on_control_points() {
-  bool ok;
-  QString *max_size = new QString();
-  max_size->assign("Points (3 - 128):");
-
-  int n = QInputDialog::getInt(this, "Amount of control points", *max_size, 16,
-                               3, 128, 1, &ok);
-  if (ok) {
-    this->data_handler->set_control_points(n);
-  }
-}
-
 void MainWindow::on_size_update() {
   bool ok;
   QString *max_size = new QString();
@@ -355,4 +385,39 @@ void MainWindow::on_size_update() {
   if (ok) {
     this->debugger->get_canvas()->set_px_size(n);
   }
+}
+
+void MainWindow::on_show_figures_dialog() {
+  QDialog *dialog = new QDialog(this);
+  dialog->setWindowTitle("Список фигур");
+  dialog->resize(300, 400);
+
+  QVBoxLayout *layout = new QVBoxLayout(dialog);
+
+  QListWidget *listWidget = new QListWidget();
+  listWidget->setSelectionMode(QAbstractItemView::SingleSelection);
+
+  for (const auto &fig : this->data_handler->get_figures()) {
+    QString itemText =
+        QString("%1 %2").arg(gtype_to_string(fig.fig_type)).arg(fig.id);
+    listWidget->addItem(itemText);
+  }
+
+  layout->addWidget(listWidget);
+
+  QPushButton *okButton = new QPushButton("OK");
+  connect(okButton, &QPushButton::clicked, dialog, &QDialog::accept);
+  layout->addWidget(okButton);
+
+  dialog->setLayout(layout);
+
+  if (dialog->exec() == QDialog::Accepted) {
+    int row = listWidget->currentRow();
+    if (row >= 0 && row < this->data_handler->get_figures().size()) {
+      this->data_handler->set_current_active_idx(row);
+      this->data_handler->set_prev_active_idx(row);
+    }
+  }
+
+  delete dialog;
 }

@@ -4,6 +4,7 @@
 #include "funcs.h"
 #include "line_drawing_algs.h"
 #include "obj_3D.h"
+#include "polygon.h"
 #include "vars.h"
 #include <cmath>
 #include <cstdint>
@@ -15,7 +16,8 @@
 
 DataHandler::DataHandler(Debugger *debugger, Figure f)
     : counter(0), debugger(debugger), figures({}), fig(f),
-      current_active_idx(CODE_ERROR), control_points(4) {}
+      current_active_idx(CODE_ERROR), control_points(CON_POINTS),
+      prev_active_idx(CODE_ERROR) {}
 
 DataHandler::~DataHandler() { std::cout << "Data handler out...\n"; }
 
@@ -27,18 +29,28 @@ void DataHandler::set_current_active_idx(int idx) {
     this->current_active_idx = idx;
   }
 }
+int DataHandler::set_prev_active_idx() const { return this->prev_active_idx; }
+void DataHandler::set_prev_active_idx(int idx) {
+  if (idx >= 0 && idx < this->figures.size()) {
+    this->prev_active_idx = idx;
+  }
+}
+
 void DataHandler::set_control_points(int p) {
-  if (p >= 3) {
+  if (p >= 3 && p <= CON_POINTS) {
     this->control_points = p;
   }
 }
+int DataHandler::get_control_points() const { return this->control_points; }
 void DataHandler::set_figure(Figure fig) { this->fig = fig; }
 Figure DataHandler::get_figure() const { return this->fig; }
+std::vector<Figure> DataHandler::get_figures() const { return this->figures; };
 
 void DataHandler::reset() {
   this->fig.points.clear();
   this->figures.clear();
   this->counter = 0;
+  this->current_active_idx = CODE_ERROR;
   this->current_active_idx = CODE_ERROR;
 }
 
@@ -51,7 +63,7 @@ void DataHandler::append(std::vector<Point> &parent, std::vector<Point> ch) {
 std::vector<Point> DataHandler::connect_points(Figure f) {
   std::vector<Point> connected;
 
-  if (f.points.size() > 1) {
+  if (f.points.size() >= 1) {
 
     switch (f.fig_type) {
     case GType::CDA: {
@@ -182,6 +194,48 @@ std::vector<Point> DataHandler::connect_points(Figure f) {
       }
       break;
     }
+    case GType::Polygon: {
+      for (int i = 0; i < f.points.size() - 1; i++) {
+        this->append(connected, this->transform_to_pts(draw_CDA(
+                                    f.points[i].x, f.points[i].y,
+                                    f.points[i + 1].x, f.points[i + 1].y)));
+      }
+      this->append(connected, this->transform_to_pts(
+                                  draw_CDA(f.points[f.points.size() - 1].x,
+                                           f.points[f.points.size() - 1].y,
+                                           f.points[0].x, f.points[0].y)));
+      break;
+    }
+    case GType::ConvexPolygon: {
+      point_vector temp;
+      for (auto e : f.points) {
+        temp.push_back({e.x, e.y});
+      }
+
+      this->append(connected,
+                   this->transform_to_pts(draw_convex_polygon(temp)));
+
+      break;
+    }
+    case GType::Dot: {
+      if (prev_active_idx != CODE_ERROR) {
+        if (this->figures[prev_active_idx].fig_type == GType::ConvexPolygon) {
+          point_vector temp;
+          for (auto e : this->figures[prev_active_idx].points) {
+            temp.push_back({e.x, e.y});
+          }
+
+          if (is_point_inside_polygon({{f.points[0].x, f.points[0].y}}, temp)) {
+            f.points[0].r = 20;
+            f.points[0].g = 60;
+            f.points[0].b = 200;
+          }
+        }
+      }
+      this->append(connected, f.points);
+
+      break;
+    }
     default: {
       break;
     }
@@ -195,6 +249,7 @@ void DataHandler::update_figure() {
   this->fig.id = this->counter;
   this->figures.push_back(this->fig);
   this->current_active_idx = this->figures.size() - 1;
+
   this->fig.points.clear();
 }
 
@@ -248,7 +303,9 @@ std::vector<Point> DataHandler::transform_to_pts(tuple_vector raw_pts) {
 }
 
 void DataHandler::add_point(Point pt) {
-  this->fig.points.push_back(pt);
+  if (!pt.is_temp) {
+    this->fig.points.push_back(pt);
+  }
   int sz = this->fig.points.size();
 
   switch (this->fig.fig_type) {
@@ -388,6 +445,38 @@ void DataHandler::add_point(Point pt) {
                                   static_cast<int>(center_y),
                                   static_cast<int>(h), 0});
 
+      this->update_figure();
+      this->launch_debugger();
+    }
+    break;
+  }
+  case GType::Polygon: {
+    if (sz == this->control_points && this->control_points > 2) {
+      this->update_figure();
+      this->launch_debugger();
+    }
+
+    break;
+  }
+  case GType::ConvexPolygon: {
+    if (sz == this->control_points && this->control_points > 2) {
+      point_vector temp;
+      for (auto e : this->fig.points) {
+        temp.push_back({e.x, e.y});
+      }
+      auto convex_points = this->transform_to_pts(get_convex_hull_points(temp));
+      this->fig.points = convex_points;
+      this->update_figure();
+      this->launch_debugger();
+    }
+
+    break;
+  }
+  case GType::Dot: {
+    if (sz == 1) {
+      this->fig.points[0].r = 0;
+      this->fig.points[0].g = 0;
+      this->fig.points[0].b = 0;
       this->update_figure();
       this->launch_debugger();
     }
