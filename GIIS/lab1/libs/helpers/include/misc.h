@@ -3,3 +3,4 @@
 #include <string>
 
 std::string gtype_to_string(GType type);
+bool f_eq(const double &a, const double &b);

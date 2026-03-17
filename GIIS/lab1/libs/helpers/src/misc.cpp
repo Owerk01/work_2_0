@@ -1,5 +1,6 @@
 #include "misc.h"
 #include "vars.h"
+#include <cmath>
 #include <string>
 
 std::string gtype_to_string(GType type) {
@@ -37,4 +38,8 @@ std::string gtype_to_string(GType type) {
   default:
     return "Unknown";
   }
+}
+
+bool f_eq(const double &a, const double &b) {
+  return std::abs(a - b) <= E_FACTOR;
 }

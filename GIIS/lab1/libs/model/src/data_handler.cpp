@@ -3,6 +3,7 @@
 #include "debugger.h"
 #include "funcs.h"
 #include "line_drawing_algs.h"
+#include "misc.h"
 #include "obj_3D.h"
 #include "polygon.h"
 #include "vars.h"
@@ -70,6 +71,27 @@ std::vector<Point> DataHandler::connect_points(Figure f) {
       this->append(connected, this->transform_to_pts(
                                   draw_CDA(f.points[0].x, f.points[0].y,
                                            f.points[1].x, f.points[1].y)));
+      if (prev_active_idx != CODE_ERROR) {
+        if (this->figures[prev_active_idx].fig_type == GType::ConvexPolygon) {
+          point_vector temp;
+          for (auto e : this->figures[prev_active_idx].points) {
+            temp.push_back({e.x, e.y});
+          }
+          this->append(connected,
+                       this->transform_to_pts(get_line_polygon_intersections(
+                           {{f.points[0].x, f.points[0].y},
+                            {f.points[1].x, f.points[1].y}},
+                           temp)));
+          for (auto &e : connected) {
+            if (int(0.5 * 255) == e.r) {
+              e.r = 100;
+              e.g = 240;
+              e.r = 100;
+            }
+          }
+        }
+      }
+
       break;
     }
 
@@ -226,9 +248,9 @@ std::vector<Point> DataHandler::connect_points(Figure f) {
           }
 
           if (is_point_inside_polygon({{f.points[0].x, f.points[0].y}}, temp)) {
-            f.points[0].r = 20;
-            f.points[0].g = 60;
-            f.points[0].b = 200;
+            f.points[0].r = 100;
+            f.points[0].g = 100;
+            f.points[0].b = 240;
           }
         }
       }

@@ -185,7 +185,7 @@ color_point_vector get_convex_hull_points(const point_vector& vertices) {
     point_vector hull = jarvis_march(vertices);
     
     for (const auto& point : hull) {
-        hull_points.push_back(std::make_tuple(point.first, point.second, 1.0));
+        hull_points.push_back(std::make_tuple(point.first, point.second, 0.0));
     }
     
     return hull_points;
@@ -241,6 +241,8 @@ bool is_point_inside_polygon(const point_vector& point, const point_vector& poly
     return inside;
 }
 
+// polygon.cpp (обновленная функция)
+
 color_point_vector get_line_polygon_intersections(const point_vector& line, const point_vector& polygon) {
     color_point_vector intersections;
     
@@ -251,27 +253,39 @@ color_point_vector get_line_polygon_intersections(const point_vector& line, cons
     int x2 = line[1].first;
     int y2 = line[1].second;
     
+    color_point_vector line_points = draw_CDA(x1, y1, x2, y2);
+    intersections = line_points;
+    
     int n = polygon.size();
     
-    for (int i = 0; i < n; i++) {
-        int j = (i + 1) % n;
+    for (size_t k = 0; k < line_points.size(); k++) {
+        int x = std::get<0>(line_points[k]);
+        int y = std::get<1>(line_points[k]);
         
-        int x3 = polygon[i].first;
-        int y3 = polygon[i].second;
-        int x4 = polygon[j].first;
-        int y4 = polygon[j].second;
-        
-        double denom = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
-        
-        if (denom == 0) continue;
-        
-        double t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / denom;
-        double u = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / denom;
-        
-        if (t >= 0 && t <= 1 && u >= 0 && u <= 1) {
-            int ix = x1 + t * (x2 - x1);
-            int iy = y1 + t * (y2 - y1);
-            intersections.push_back(std::make_tuple(ix, iy, 1.0));
+        for (int i = 0; i < n; i++) {
+            int j = (i + 1) % n;
+            
+            int x3 = polygon[i].first;
+            int y3 = polygon[i].second;
+            int x4 = polygon[j].first;
+            int y4 = polygon[j].second;
+            
+            double denom = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
+            
+            if (denom == 0) continue;
+            
+            double t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / denom;
+            double u = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / denom;
+            
+            if (t >= 0 && t <= 1 && u >= 0 && u <= 1) {
+                int ix = x1 + t * (x2 - x1);
+                int iy = y1 + t * (y2 - y1);
+                
+                if (std::abs(ix - x) < 2 && std::abs(iy - y) < 2) {
+                    intersections[k] = std::make_tuple(ix, iy, 0.5);
+                    break;
+                }
+            }
         }
     }
     

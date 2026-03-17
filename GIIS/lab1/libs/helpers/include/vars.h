@@ -20,7 +20,7 @@
   CANVAS_SIZE <= MIN_WINDOW_HEIGHT ? MIN_WINDOW_HEIGHT : CANVAS_SIZE
 
 #define CON_POINTS 8192
-
+#define E_FACTOR 1e-6
 enum class GType {
   CDA,
   Bresenham,
