@@ -64,9 +64,9 @@ const tokens = [
     {% for token in sentence.tokens %}
     {
         id: {{ token.id }},
-        word: "{{ token.word }}",
-        tag: "{{ token.tag }}",
-        dep: "{{ token.dep }}",
+        word: {{ token.word|tojson }},
+        tag: {{ token.tag|tojson }},
+        dep: {{ token.dep|tojson }},
         parent_id: {{ token.parent_id }}
     }{% if not loop.last %},{% endif %}
     {% endfor %}
