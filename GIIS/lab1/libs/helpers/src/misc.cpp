@@ -33,6 +33,14 @@ std::string gtype_to_string(GType type) {
     return "Polygon";
   case GType::ConvexPolygon:
     return "ConvexPolygon";
+  case GType::FillOrderedEdges:
+    return "FillOrderedEdges";
+  case GType::FillActiveEdges:
+    return "FillActiveEdges";
+  case GType::FillSeedSimple:
+    return "FillSeedSimple";
+  case GType::FillSeedScanline:
+    return "FillSeedScanline";
   case GType::Dot:
     return "Dot";
   default:

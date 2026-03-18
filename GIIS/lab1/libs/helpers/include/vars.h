@@ -36,6 +36,10 @@ enum class GType {
   Tetrahedron,
   Polygon,
   ConvexPolygon,
+  FillOrderedEdges,
+  FillActiveEdges,
+  FillSeedSimple,
+  FillSeedScanline,
   Dot
 };
 

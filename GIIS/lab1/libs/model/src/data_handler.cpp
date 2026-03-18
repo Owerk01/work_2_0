@@ -6,6 +6,7 @@
 #include "misc.h"
 #include "obj_3D.h"
 #include "polygon.h"
+#include "polygon_fill.h"
 #include "vars.h"
 #include <cmath>
 #include <cstdint>
@@ -239,6 +240,86 @@ std::vector<Point> DataHandler::connect_points(Figure f) {
 
       break;
     }
+
+case GType::FillOrderedEdges: {
+    point_vector temp;
+    for (auto e : f.points) {
+        temp.push_back({e.x, e.y});
+    }
+    this->append(connected,
+        this->transform_to_pts(fill_polygon_scanline_ordered(temp)));
+    for (size_t i = 0; i < f.points.size(); i++) {
+        size_t next = (i + 1) % f.points.size();
+        this->append(connected, this->transform_to_pts(draw_CDA(
+            f.points[i].x, f.points[i].y,
+            f.points[next].x, f.points[next].y)));
+    }
+    break;
+}
+case GType::FillActiveEdges: {
+    point_vector temp;
+    for (auto e : f.points) {
+        temp.push_back({e.x, e.y});
+    }
+    this->append(connected,
+        this->transform_to_pts(fill_polygon_scanline_active(temp)));
+    for (size_t i = 0; i < f.points.size(); i++) {
+        size_t next = (i + 1) % f.points.size();
+        this->append(connected, this->transform_to_pts(draw_CDA(
+            f.points[i].x, f.points[i].y,
+            f.points[next].x, f.points[next].y)));
+    }
+    break;
+}
+case GType::FillSeedSimple: {
+    if (f.points.size() >= 4) {
+        point_vector temp;
+        for (size_t i = 0; i < f.points.size() - 1; i++) {
+            temp.push_back({f.points[i].x, f.points[i].y});
+        }
+        int seed_x = f.points.back().x;
+        int seed_y = f.points.back().y;
+        for (int dy = -1; dy <= 1; dy++) {
+            for (int dx = -1; dx <= 1; dx++) {
+                connected.push_back({seed_x + dx, seed_y + dy, 0, 0, 0});
+            }
+        }
+        this->append(connected,
+            this->transform_to_pts(fill_polygon_seed_simple(temp, seed_x, seed_y)));
+        for (size_t i = 0; i < temp.size(); i++) {
+            size_t next = (i + 1) % temp.size();
+            this->append(connected, this->transform_to_pts(draw_CDA(
+                temp[i].first, temp[i].second,
+                temp[next].first, temp[next].second)));
+        }
+    }
+    break;
+}
+case GType::FillSeedScanline: {
+    if (f.points.size() >= 4) {
+        point_vector temp;
+        for (size_t i = 0; i < f.points.size() - 1; i++) {
+            temp.push_back({f.points[i].x, f.points[i].y});
+        }
+        int seed_x = f.points.back().x;
+        int seed_y = f.points.back().y;
+        for (int dy = -1; dy <= 1; dy++) {
+            for (int dx = -1; dx <= 1; dx++) {
+                connected.push_back({seed_x + dx, seed_y + dy, 0, 0, 0});
+            }
+        }
+        this->append(connected,
+            this->transform_to_pts(fill_polygon_seed_scanline(temp, seed_x, seed_y)));
+        for (size_t i = 0; i < temp.size(); i++) {
+            size_t next = (i + 1) % temp.size();
+            this->append(connected, this->transform_to_pts(draw_CDA(
+                temp[i].first, temp[i].second,
+                temp[next].first, temp[next].second)));
+        }
+    }
+    break;
+}
+
     case GType::Dot: {
       if (prev_active_idx != CODE_ERROR) {
         if (this->figures[prev_active_idx].fig_type == GType::ConvexPolygon) {
@@ -494,6 +575,14 @@ void DataHandler::add_point(Point pt) {
 
     break;
   }
+
+case GType::FillOrderedEdges:
+case GType::FillActiveEdges:
+case GType::FillSeedSimple:
+case GType::FillSeedScanline: {
+    break;
+}
+
   case GType::Dot: {
     if (sz == 1) {
       this->fig.points[0].r = 0;
