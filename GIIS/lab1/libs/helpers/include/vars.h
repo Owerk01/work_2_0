@@ -21,6 +21,7 @@
 
 #define CON_POINTS 8192
 #define E_FACTOR 1e-6
+
 enum class GType {
   CDA,
   Bresenham,
@@ -64,6 +65,7 @@ struct Point {
   Point(int x, int y, uint8_t r, uint8_t g, uint8_t b)
       : x(x), y(y), presize_x(static_cast<double>(x)),
         presize_y(static_cast<double>(y)), r(r), g(g), b(b) {}
+        
   Point(int x, int y, int z, uint8_t r, uint8_t g, uint8_t b)
       : x(x), y(y), z(z), presize_x(static_cast<double>(x)),
         presize_y(static_cast<double>(y)), presize_z(static_cast<double>(z)),
