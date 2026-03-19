@@ -5,3 +5,4 @@ pydantic
 docx
 pdfplumber
 werkzeug
+antiword

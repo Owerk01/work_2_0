@@ -1,5 +1,6 @@
 # Launch this inside "lab3" folder
 ```bash
+sudo apt install catdoc
 python3 -m venv venv
 source venv/bin/activate
 pip3 install -r requirements.txt

@@ -1,6 +1,5 @@
 #include "line_drawing_algs.h"
 #include <cmath>
-#include <iostream>
 #include <tuple>
 #include <vector>
 

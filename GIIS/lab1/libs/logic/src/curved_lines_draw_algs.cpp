@@ -1,7 +1,6 @@
 #include "curved_lines_draw_algs.h"
 #include <algorithm>
 #include <cmath>
-#include <iostream>
 #include <tuple>
 #include <vector>
 

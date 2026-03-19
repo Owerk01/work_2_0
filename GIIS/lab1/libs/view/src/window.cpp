@@ -204,22 +204,26 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
   this->connect(dot_btn, &QToolButton::clicked, this,
                 [this]() { this->data_handler->set_figure({GType::Dot}); });
 
-QToolButton *btn_fill = new QToolButton(tool_bar);
-btn_fill->setText("Fill");
-btn_fill->setToolTip("Polygon filling algorithms");
-btn_fill->setMaximumWidth(4 * CELL);
-QMenu *menu_fill = new QMenu(btn_fill);
-menu_fill->addAction("Ordered Edges")->setData(static_cast<int>(GType::FillOrderedEdges));
-menu_fill->addAction("Active Edges")->setData(static_cast<int>(GType::FillActiveEdges));
-menu_fill->addAction("Seed Simple")->setData(static_cast<int>(GType::FillSeedSimple));
-menu_fill->addAction("Seed Scanline")->setData(static_cast<int>(GType::FillSeedScanline));
-btn_fill->setMenu(menu_fill);
-btn_fill->setPopupMode(QToolButton::InstantPopup);
-tool_bar->addWidget(btn_fill);
-this->connect(menu_fill, &QMenu::triggered, this, [this](QAction *act) {
-    int id = act->data().toInt();
-    this->data_handler->set_figure({static_cast<GType>(id)});
-});
+  // button with popup, goddamn x4
+  QToolButton *btn_fill = new QToolButton(tool_bar);
+  btn_fill->setText("Fill");
+  btn_fill->setToolTip("Polygon filling algorithms");
+  btn_fill->setMaximumWidth(4 * CELL);
+
+  QMenu *menu_fill = new QMenu(btn_fill);
+  
+  menu_fill->addAction("Ordered Edges")
+      ->setData(static_cast<int>(GType::FillOrderedEdges));
+  menu_fill->addAction("Active Edges")
+      ->setData(static_cast<int>(GType::FillActiveEdges));
+  menu_fill->addAction("Seed Simple")
+      ->setData(static_cast<int>(GType::FillSeedSimple));
+  menu_fill->addAction("Seed Scanline")
+      ->setData(static_cast<int>(GType::FillSeedScanline));
+
+  btn_fill->setMenu(menu_fill);
+  btn_fill->setPopupMode(QToolButton::InstantPopup);
+
 
   // algs buttons
   tool_bar->addWidget(frl_btn);
@@ -248,6 +252,12 @@ this->connect(menu_fill, &QMenu::triggered, this, [this](QAction *act) {
 
   tool_bar->addWidget(btn_polygon);
   this->connect(menu_polygon, &QMenu::triggered, this, [this](QAction *act) {
+    int id = act->data().toInt();
+    this->data_handler->set_figure({static_cast<GType>(id)});
+  });
+
+    tool_bar->addWidget(btn_fill);
+  this->connect(menu_fill, &QMenu::triggered, this, [this](QAction *act) {
     int id = act->data().toInt();
     this->data_handler->set_figure({static_cast<GType>(id)});
   });
@@ -341,27 +351,6 @@ this->connect(menu_fill, &QMenu::triggered, this, [this](QAction *act) {
     this->data_handler->add_point();
     this->data_handler->set_control_points(CON_POINTS);
   });
-
-new QShortcut(QKeySequence(Qt::Key_F), this, [this]() {
-    // Завершение заполнения по клавише F
-    GType type = this->data_handler->get_figure().fig_type;
-    int sz = this->data_handler->get_figure().points.size();
-    
-    bool is_fill_type = (type == GType::FillOrderedEdges || 
-                         type == GType::FillActiveEdges ||
-                         type == GType::FillSeedSimple || 
-                         type == GType::FillSeedScanline);
-    
-    // Проверяем минимальное количество точек
-    bool enough_points = (type == GType::FillSeedSimple || 
-                          type == GType::FillSeedScanline) ? 
-                          (sz >= 4) : (sz >= 3);
-    
-    if (is_fill_type && enough_points) {
-        this->data_handler->update_figure();
-        this->data_handler->launch_debugger();
-    }
-});
 }
 
 MainWindow::~MainWindow() {
@@ -395,10 +384,14 @@ void MainWindow::on_help() {
       "6. To draw a bspline - set 8 points\n"
       "7. To draw a cube - set the first vertex point and edge length\n"
       "8. To draw a tetrahedron - set the first vertex point and edge length\n"
-      "9. To fill polygon (Ordered Edges) - set 3+ polygon vertices, press 'f' to complete\n"
-      "10. To fill polygon (Active Edges) - set 3+ polygon vertices, press 'f' to complete\n"
-      "11. To fill polygon (Seed Simple) - set 3+ polygon vertices + seed point, press 'f' to complete\n"
-      "12. To fill polygon (Seed Scanline) - set 3+ polygon vertices + seed point, press 'f' to complete\n"
+      "9. To fill polygon (Ordered Edges) - set 3+ polygon vertices, press 'a' "
+      "to complete\n"
+      "10. To fill polygon (Active Edges) - set 3+ polygon vertices, press 'a' "
+      "to complete\n"
+      "11. To fill polygon (Seed Simple) - set 3+ polygon vertices + seed "
+      "point, press 'a' to complete\n"
+      "12. To fill polygon (Seed Scanline) - set 3+ polygon vertices + seed "
+      "point, press 'a' to complete\n"
       "\n"
       "Useful shortcuts:\n"
       "'F10' - debug step\n"

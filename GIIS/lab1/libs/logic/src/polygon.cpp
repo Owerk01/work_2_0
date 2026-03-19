@@ -2,7 +2,6 @@
 #include "line_drawing_algs.h"
 #include <algorithm>
 #include <cmath>
-#include <iostream>
 
 bool is_convex(const point_vector &points) {
   if (points.size() < 3)
@@ -241,7 +240,6 @@ bool is_point_inside_polygon(const point_vector& point, const point_vector& poly
     return inside;
 }
 
-// polygon.cpp (обновленная функция)
 
 color_point_vector get_line_polygon_intersections(const point_vector& line, const point_vector& polygon) {
     color_point_vector intersections;

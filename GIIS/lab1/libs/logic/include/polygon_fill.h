@@ -3,11 +3,6 @@
 
 #include <vector>
 #include <tuple>
-#include <stack>
-#include <algorithm>
-#include <set>
-#include <map>
-#include <queue>
 
 using point_vector = std::vector<std::pair<int, int>>;
 using color_point_vector = std::vector<std::tuple<int, int, double>>;
