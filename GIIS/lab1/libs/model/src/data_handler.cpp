@@ -6,6 +6,7 @@
 #include "obj_3D.h"
 #include "polygon.h"
 #include "polygon_fill.h"
+#include "polygonalisation.h"
 #include "vars.h"
 #include <cmath>
 #include <cstdint>
@@ -337,6 +338,15 @@ std::vector<Point> DataHandler::connect_points(Figure f) {
 
       break;
     }
+    case GType::Delone: {
+      point_vector temp;
+      for (auto e : f.points) {
+        temp.push_back({e.x, e.y});
+      }
+
+      this->append(connected, this->transform_to_pts(draw_Delone(temp)));
+      break;
+    }
     default: {
       break;
     }
@@ -611,6 +621,13 @@ void DataHandler::add_point(Point pt) {
       this->fig.points[0].r = 0;
       this->fig.points[0].g = 0;
       this->fig.points[0].b = 0;
+      this->update_figure();
+      this->launch_debugger();
+    }
+    break;
+  }
+  case GType::Delone: {
+    if (sz == this->control_points && this->control_points > 2) {
       this->update_figure();
       this->launch_debugger();
     }

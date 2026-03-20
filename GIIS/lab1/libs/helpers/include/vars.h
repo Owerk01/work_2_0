@@ -41,7 +41,8 @@ enum class GType {
   FillActiveEdges,
   FillSeedSimple,
   FillSeedScanline,
-  Dot
+  Dot,
+  Delone
 };
 
 struct Point {

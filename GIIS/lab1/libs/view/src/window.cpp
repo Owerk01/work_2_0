@@ -170,7 +170,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
   arl_btn->setPopupMode(QToolButton::InstantPopup);
   //
 
-  // button with popup, goddamn x3
+  // button with popup, goddamn x4
   QToolButton *btn_3D = new QToolButton(tool_bar);
   btn_3D->setText("3D");
   btn_3D->setToolTip("3D figures");
@@ -185,7 +185,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
   btn_3D->setPopupMode(QToolButton::InstantPopup);
   //
 
-  // button with popup, goddamn x4
+  // button with popup, goddamn x5
   QToolButton *btn_polygon = new QToolButton(tool_bar);
   btn_polygon->setText("Polygon");
   btn_polygon->setToolTip("Various polygon types");
@@ -200,18 +200,14 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
   btn_polygon->setPopupMode(QToolButton::InstantPopup);
   //
 
-  tool_bar->addWidget(dot_btn);
-  this->connect(dot_btn, &QToolButton::clicked, this,
-                [this]() { this->data_handler->set_figure({GType::Dot}); });
-
-  // button with popup, goddamn x4
+  // button with popup, goddamn x6
   QToolButton *btn_fill = new QToolButton(tool_bar);
   btn_fill->setText("Fill");
   btn_fill->setToolTip("Polygon filling algorithms");
   btn_fill->setMaximumWidth(4 * CELL);
 
   QMenu *menu_fill = new QMenu(btn_fill);
-  
+
   menu_fill->addAction("Ordered Edges")
       ->setData(static_cast<int>(GType::FillOrderedEdges));
   menu_fill->addAction("Active Edges")
@@ -223,9 +219,28 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
 
   btn_fill->setMenu(menu_fill);
   btn_fill->setPopupMode(QToolButton::InstantPopup);
+  //
 
+  // button with popup, goddamn x7
+  QToolButton *btn_polygonalisation = new QToolButton(tool_bar);
+  btn_polygonalisation->setText("PolyFill");
+  btn_polygonalisation->setToolTip("Delone and Voronoi algorithms");
+  btn_polygonalisation->setMaximumWidth(4 * CELL);
+
+  QMenu *menu_polygonalisation = new QMenu(btn_polygonalisation);
+
+  menu_polygonalisation->addAction("Delone")->setData(
+      static_cast<int>(GType::Delone));
+
+  btn_polygonalisation->setMenu(menu_polygonalisation);
+  btn_polygonalisation->setPopupMode(QToolButton::InstantPopup);
+  //
 
   // algs buttons
+  tool_bar->addWidget(dot_btn);
+  this->connect(dot_btn, &QToolButton::clicked, this,
+                [this]() { this->data_handler->set_figure({GType::Dot}); });
+
   tool_bar->addWidget(frl_btn);
   this->connect(frl_menu, &QMenu::triggered, this, [this](QAction *act) {
     int id = act->data().toInt();
@@ -256,11 +271,18 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
     this->data_handler->set_figure({static_cast<GType>(id)});
   });
 
-    tool_bar->addWidget(btn_fill);
+  tool_bar->addWidget(btn_fill);
   this->connect(menu_fill, &QMenu::triggered, this, [this](QAction *act) {
     int id = act->data().toInt();
     this->data_handler->set_figure({static_cast<GType>(id)});
   });
+
+  tool_bar->addWidget(btn_polygonalisation);
+  this->connect(menu_polygonalisation, &QMenu::triggered, this,
+                [this](QAction *act) {
+                  int id = act->data().toInt();
+                  this->data_handler->set_figure({static_cast<GType>(id)});
+                });
 
   // misc buttons
   tool_bar->addWidget(clear_canvas_btn);
