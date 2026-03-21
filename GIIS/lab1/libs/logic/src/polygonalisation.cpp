@@ -4,7 +4,6 @@
 #include <algorithm>
 #include <climits>
 #include <cmath>
-#include <iostream>
 #include <utility>
 
 edge get_start_edge(const point_vector &pts) {
@@ -193,8 +192,214 @@ color_point_vector draw_Delone(const point_vector &pts) {
     color_point_vector line = draw_CDA(e.first.first, e.first.second,
                                        e.second.first, e.second.second);
 
-    for (const auto &e : line) {
-      result.push_back(e);
+    for (const auto &e1 : line) {
+      result.push_back(e1);
+    }
+  }
+
+  return result;
+}
+
+p_point_vector get_bounding_box(const p_point &min_xy, const p_point &max_xy) {
+  return {min_xy,
+          {max_xy.first, min_xy.second},
+          max_xy,
+          {min_xy.first, max_xy.second}};
+}
+
+p_point_vector intersect_half_plane(const p_point_vector &current_region,
+                                    const point &p0, const point &p1,
+                                    const p_point &min_xy,
+                                    const p_point &max_xy) {
+  p_point_vector new_region;
+
+  if (current_region.empty()) {
+    return new_region;
+  }
+
+  p_point mid = {(p0.first + p1.first) / 2.0f, (p0.second + p1.second) / 2.0f};
+
+  float dx = p1.first - p0.first;
+  float dy = p1.second - p0.second;
+
+  p_point normal = {static_cast<float>(p0.first - mid.first),
+                    static_cast<float>(p0.second - mid.second)};
+
+  float norm_len =
+      std::sqrt(normal.first * normal.first + normal.second * normal.second);
+  if (norm_len > 1e-6f) {
+    normal.first /= norm_len;
+    normal.second /= norm_len;
+  }
+
+  for (size_t i = 0; i < current_region.size(); ++i) {
+    const p_point &p_curr = current_region[i];
+    const p_point &p_next = current_region[(i + 1) % current_region.size()];
+
+    float val_curr = (p_curr.first - mid.first) * normal.first +
+                     (p_curr.second - mid.second) * normal.second;
+    float val_next = (p_next.first - mid.first) * normal.first +
+                     (p_next.second - mid.second) * normal.second;
+
+    if (val_curr >= -1e-6f) {
+      new_region.push_back(p_curr);
+    }
+
+    if ((val_curr > 1e-6f && val_next < -1e-6f) ||
+        (val_curr < -1e-6f && val_next > 1e-6f)) {
+
+      float t = -val_curr / (val_next - val_curr);
+      p_point intersection = {p_curr.first + t * (p_next.first - p_curr.first),
+                              p_curr.second +
+                                  t * (p_next.second - p_curr.second)};
+      new_region.push_back(intersection);
+    }
+  }
+
+  return new_region;
+}
+
+p_point_vector get_voronoi_cell_for_point(const point &p0,
+                                          const point_vector &pts,
+                                          const p_point &min_xy,
+                                          const p_point &max_xy) {
+
+  p_point_vector region = get_bounding_box(min_xy, max_xy);
+
+  for (const auto &p1 : pts) {
+    if (p0 == p1)
+      continue;
+
+    region = intersect_half_plane(region, p0, p1, min_xy, max_xy);
+
+    if (region.size() < 3) {
+      return {};
+    }
+  }
+
+  return region;
+}
+
+p_point_vector get_Voronoi_cell_vertexes(const point_vector &pts) {
+  p_point_vector all_vertices;
+
+  if (pts.size() < 3) {
+    return all_vertices;
+  }
+
+  float min_x = pts[0].first, min_y = pts[0].second;
+  float max_x = pts[0].first, max_y = pts[0].second;
+
+  for (const auto &p : pts) {
+    min_x = std::min(min_x, static_cast<float>(p.first));
+    min_y = std::min(min_y, static_cast<float>(p.second));
+    max_x = std::max(max_x, static_cast<float>(p.first));
+    max_y = std::max(max_y, static_cast<float>(p.second));
+  }
+
+  float padding = std::max((max_x - min_x) * 0.2f, 5.0f);
+  p_point min_xy = {min_x - padding, min_y - padding};
+  p_point max_xy = {max_x + padding, max_y + padding};
+
+  for (const auto &p : pts) {
+    p_point_vector cell = get_voronoi_cell_for_point(p, pts, min_xy, max_xy);
+
+    for (const auto &vertex : cell) {
+
+      bool duplicate = false;
+      for (const auto &existing : all_vertices) {
+        if (std::abs(existing.first - vertex.first) < 1e-4f &&
+            std::abs(existing.second - vertex.second) < 1e-4f) {
+          duplicate = true;
+          break;
+        }
+      }
+      if (!duplicate) {
+        all_vertices.push_back(vertex);
+      }
+    }
+  }
+
+  return all_vertices;
+}
+
+color_point_vector draw_Voronoi(const point_vector &pts) {
+  color_point_vector result;
+
+  if (pts.size() < 3) {
+    return result;
+  }
+
+  p_point_vector voronoi_vertices = get_Voronoi_cell_vertexes(pts);
+
+  if (voronoi_vertices.empty()) {
+    return result;
+  }
+
+  float min_x = pts[0].first, min_y = pts[0].second;
+  float max_x = pts[0].first, max_y = pts[0].second;
+
+  for (const auto &p : pts) {
+    min_x = std::min(min_x, static_cast<float>(p.first));
+    min_y = std::min(min_y, static_cast<float>(p.second));
+    max_x = std::max(max_x, static_cast<float>(p.first));
+    max_y = std::max(max_y, static_cast<float>(p.second));
+  }
+
+  float padding = std::max((max_x - min_x) * 0.2f, 5.0f);
+  p_point min_xy = {min_x - padding, min_y - padding};
+  p_point max_xy = {max_x + padding, max_y + padding};
+
+  std::vector<std::pair<p_point, p_point>> all_edges;
+
+  for (const auto &p : pts) {
+    p_point_vector cell = get_voronoi_cell_for_point(p, pts, min_xy, max_xy);
+
+    if (cell.size() >= 3) {
+      for (size_t i = 0; i < cell.size(); ++i) {
+        p_point p1 = cell[i];
+        p_point p2 = cell[(i + 1) % cell.size()];
+
+        if (p1.first < p2.first - 1e-6f ||
+            (std::abs(p1.first - p2.first) < 1e-6f &&
+             p1.second < p2.second - 1e-6f)) {
+          all_edges.push_back({p1, p2});
+        } else {
+          all_edges.push_back({p2, p1});
+        }
+      }
+    }
+  }
+
+  std::vector<std::pair<p_point, p_point>> unique_edges;
+
+  for (size_t i = 0; i < all_edges.size(); ++i) {
+    bool duplicate = false;
+    for (size_t j = i + 1; j < all_edges.size(); ++j) {
+      if (std::abs(all_edges[i].first.first - all_edges[j].first.first) <
+              1e-4f &&
+          std::abs(all_edges[i].first.second - all_edges[j].first.second) <
+              1e-4f &&
+          std::abs(all_edges[i].second.first - all_edges[j].second.first) <
+              1e-4f &&
+          std::abs(all_edges[i].second.second - all_edges[j].second.second) <
+              1e-4f) {
+        duplicate = true;
+        break;
+      }
+    }
+    if (!duplicate) {
+      unique_edges.push_back(all_edges[i]);
+    }
+  }
+
+  for (const auto &edge : unique_edges) {
+    color_point_vector line =
+        draw_CDA(std::round(edge.first.first), std::round(edge.first.second),
+                 std::round(edge.second.first), std::round(edge.second.second));
+
+    for (const auto &point : line) {
+      result.push_back(point);
     }
   }
 

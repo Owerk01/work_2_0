@@ -231,6 +231,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
 
   menu_polygonalisation->addAction("Delone")->setData(
       static_cast<int>(GType::Delone));
+  menu_polygonalisation->addAction("Voronoi")->setData(
+      static_cast<int>(GType::Voronoi));
 
   btn_polygonalisation->setMenu(menu_polygonalisation);
   btn_polygonalisation->setPopupMode(QToolButton::InstantPopup);

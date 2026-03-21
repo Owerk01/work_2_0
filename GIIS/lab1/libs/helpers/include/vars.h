@@ -42,7 +42,8 @@ enum class GType {
   FillSeedSimple,
   FillSeedScanline,
   Dot,
-  Delone
+  Delone,
+  Voronoi
 };
 
 struct Point {
@@ -70,7 +71,7 @@ struct Point {
   Point(int x, int y, uint8_t r, uint8_t g, uint8_t b)
       : x(x), y(y), presize_x(static_cast<double>(x)),
         presize_y(static_cast<double>(y)), r(r), g(g), b(b) {}
-        
+
   Point(int x, int y, int z, uint8_t r, uint8_t g, uint8_t b)
       : x(x), y(y), z(z), presize_x(static_cast<double>(x)),
         presize_y(static_cast<double>(y)), presize_z(static_cast<double>(z)),

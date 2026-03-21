@@ -347,6 +347,14 @@ std::vector<Point> DataHandler::connect_points(Figure f) {
       this->append(connected, this->transform_to_pts(draw_Delone(temp)));
       break;
     }
+    case GType::Voronoi: {
+      point_vector temp;
+      for (auto e : f.points) {
+        temp.push_back({e.x, e.y});
+      }
+      this->append(connected, this->transform_to_pts(draw_Voronoi(temp)));
+      break;
+    }
     default: {
       break;
     }
@@ -627,6 +635,13 @@ void DataHandler::add_point(Point pt) {
     break;
   }
   case GType::Delone: {
+    if (sz == this->control_points && this->control_points > 2) {
+      this->update_figure();
+      this->launch_debugger();
+    }
+    break;
+  }
+  case GType::Voronoi: {
     if (sz == this->control_points && this->control_points > 2) {
       this->update_figure();
       this->launch_debugger();
