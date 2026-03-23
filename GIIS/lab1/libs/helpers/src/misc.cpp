@@ -41,6 +41,10 @@ std::string gtype_to_string(GType type) {
     return "FillSeedSimple";
   case GType::FillSeedScanline:
     return "FillSeedScanline";
+  case GType::Delone:
+    return "Delone";
+  case GType::Voronoi:
+    return "Voronoi";
   case GType::Dot:
     return "Dot";
   default:

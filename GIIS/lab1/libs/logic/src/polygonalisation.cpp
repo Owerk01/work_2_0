@@ -7,160 +7,146 @@
 #include <utility>
 
 edge get_start_edge(const point_vector &pts) {
-
   int leftmost_idx = 0;
   for (size_t i = 1; i < pts.size(); i++) {
-    if (pts[i].first < pts[leftmost_idx].first) {
+    if (pts[i].first < pts[leftmost_idx].first ||
+        (pts[i].first == pts[leftmost_idx].first &&
+         pts[i].second < pts[leftmost_idx].second)) {
       leftmost_idx = i;
     }
   }
 
-  point_vector hull;
-  int current_idx = leftmost_idx;
+  int next_idx = -1;
+  const point &p0 = pts[leftmost_idx];
 
-  do {
-    hull.push_back(pts[current_idx]);
+  for (size_t i = 0; i < pts.size(); i++) {
+    if (i == leftmost_idx)
+      continue;
 
-    int next_idx = (current_idx + 1) % pts.size();
-
-    if (hull.size() == 2) {
-      break;
+    if (next_idx == -1) {
+      next_idx = i;
+      continue;
     }
 
-    for (size_t i = 0; i < pts.size(); i++) {
-      const auto &p1 = pts[current_idx];
-      const auto &p2 = pts[next_idx];
-      const auto &p3 = pts[i];
+    const point &p1 = pts[next_idx];
+    const point &p2 = pts[i];
 
-      int v1x = p2.first - p1.first;
-      int v1y = p2.second - p1.second;
-      int v2x = p3.first - p1.first;
-      int v2y = p3.second - p1.second;
+    int v1x = p1.first - p0.first;
+    int v1y = p1.second - p0.second;
+    int v2x = p2.first - p0.first;
+    int v2y = p2.second - p0.second;
 
-      int cross = v1x * v2y - v1y * v2x;
+    int cross = v1x * v2y - v1y * v2x;
 
-      if (cross < 0) {
+    if (cross > 0) {
+      next_idx = i;
+    } else if (cross == 0) {
+
+      int dist1 = v1x * v1x + v1y * v1y;
+      int dist2 = v2x * v2x + v2y * v2y;
+      if (dist2 < dist1) {
         next_idx = i;
-      } else if (cross == 0) {
-        int dist_to_next = (p2.first - p1.first) * (p2.first - p1.first) +
-                           (p2.second - p1.second) * (p2.second - p1.second);
-        int dist_to_candidate =
-            (p3.first - p1.first) * (p3.first - p1.first) +
-            (p3.second - p1.second) * (p3.second - p1.second);
-        if (dist_to_candidate > dist_to_next) {
-          next_idx = i;
-        }
       }
     }
+  }
 
-    current_idx = next_idx;
-
-  } while (current_idx != leftmost_idx && hull.size() < 2);
-
-  return {hull[0], hull[1]};
+  return {pts[leftmost_idx], pts[next_idx]};
 }
 
 bool circle_from_3_points(const point &p1, const point &p2, const point &p3,
-                          std::pair<float, float> &center, float &radius) {
+                          std::pair<double, double> &center, double &radius) {
+  double x1 = p1.first, y1 = p1.second;
+  double x2 = p2.first, y2 = p2.second;
+  double x3 = p3.first, y3 = p3.second;
 
-  float x1 = p1.first, y1 = p1.second;
-  float x2 = p2.first, y2 = p2.second;
-  float x3 = p3.first, y3 = p3.second;
-
-  float area2 = (x2 - x1) * (y3 - y1) - (x3 - x1) * (y2 - y1);
-  if (fabs(area2) < 1e-6f) {
+  double d = 2.0 * (x1 * (y2 - y3) + x2 * (y3 - y1) + x3 * (y1 - y2));
+  if (fabs(d) < 1e-10) {
     return false;
   }
 
-  float A1 = x2 - x1;
-  float B1 = y2 - y1;
-  float C1 = (x2 * x2 - x1 * x1 + y2 * y2 - y1 * y1) / 2.0f;
+  double ux =
+      ((x1 * x1 + y1 * y1) * (y2 - y3) + (x2 * x2 + y2 * y2) * (y3 - y1) +
+       (x3 * x3 + y3 * y3) * (y1 - y2)) /
+      d;
 
-  float A2 = x3 - x1;
-  float B2 = y3 - y1;
-  float C2 = (x3 * x3 - x1 * x1 + y3 * y3 - y1 * y1) / 2.0f;
+  double uy =
+      ((x1 * x1 + y1 * y1) * (x3 - x2) + (x2 * x2 + y2 * y2) * (x1 - x3) +
+       (x3 * x3 + y3 * y3) * (x2 - x1)) /
+      d;
 
-  float det = A1 * B2 - A2 * B1;
+  center.first = ux;
+  center.second = uy;
 
-  if (fabs(det) < 1e-6f) {
-    return false;
-  }
-
-  center.first = (C1 * B2 - C2 * B1) / det;
-  center.second = (A1 * C2 - A2 * C1) / det;
-
-  float dx = center.first - x1;
-  float dy = center.second - y1;
+  double dx = ux - x1;
+  double dy = uy - y1;
   radius = std::sqrt(dx * dx + dy * dy);
 
   return true;
 }
 
 point_vector get_oncircle_points(const edge &e, const point_vector &pts) {
-
-  point_vector a;
+  point_vector candidates;
 
   for (const auto &p : pts) {
-    if (p != e.first && p != e.second) {
+    if (p == e.first || p == e.second)
+      continue;
 
-      std::pair<float, float> c;
-      float R;
-      bool success = circle_from_3_points(e.first, e.second, p, c, R);
+    std::pair<double, double> center;
+    double radius;
 
-      if (success) {
-        bool is_ok = true;
-        for (const auto &p2 : pts) {
+    if (circle_from_3_points(e.first, e.second, p, center, radius)) {
+      bool is_empty = true;
 
-          if (p2 != p && p2 != e.first && p2 != e.second) {
-            float length = std::sqrt(std::pow(c.first - p2.first, 2) +
-                                     std::pow(c.second - p2.second, 2));
-            if (length < R) {
-              is_ok = false;
-              break;
-            }
-          }
+      for (const auto &p2 : pts) {
+        if (p2 == p || p2 == e.first || p2 == e.second)
+          continue;
+
+        double dx = center.first - p2.first;
+        double dy = center.second - p2.second;
+        double dist2 = dx * dx + dy * dy;
+
+        if (dist2 < radius * radius - 1e-8) {
+          is_empty = false;
+          break;
         }
-        if (is_ok) {
+      }
 
-          a.push_back(p);
-        }
+      if (is_empty) {
+        candidates.push_back(p);
       }
     }
   }
-  return a;
+
+  return candidates;
 }
 
 bool is_alive(const edge_vector &alive, const edge &e) {
-
   edge rev_e = {e.second, e.first};
-  auto it = std::find(alive.begin(), alive.end(), e);
-  auto rev_it = std::find(alive.begin(), alive.end(), rev_e);
-
-  if (it != alive.end() || rev_it != alive.end()) {
-    return true;
-  }
-  return false;
+  return (std::find(alive.begin(), alive.end(), e) != alive.end() ||
+          std::find(alive.begin(), alive.end(), rev_e) != alive.end());
 }
 
 void update_alive_dead(edge_vector &alive, edge_vector &dead, const edge &e) {
   edge rev_e = {e.second, e.first};
 
   auto it = std::find(alive.begin(), alive.end(), e);
-  auto it2 = std::find(dead.begin(), dead.end(), e);
-
   auto rev_it = std::find(alive.begin(), alive.end(), rev_e);
-  auto rev_it2 = std::find(dead.begin(), dead.end(), rev_e);
 
-  if (it != alive.end() || rev_it != alive.end()) {
-    alive.erase((it == alive.end()) ? rev_it : it);
+  if (it != alive.end()) {
+    alive.erase(it);
     dead.push_back(e);
-  } else if (it2 == dead.end() && rev_it2 == dead.end()) {
-    alive.push_back(e);
+  } else if (rev_it != alive.end()) {
+    alive.erase(rev_it);
+    dead.push_back(e);
+  } else {
+    if (std::find(dead.begin(), dead.end(), e) == dead.end() &&
+        std::find(dead.begin(), dead.end(), rev_e) == dead.end()) {
+      alive.push_back(e);
+    }
   }
 }
 
 color_point_vector draw_Delone(const point_vector &pts) {
-
   color_point_vector result;
 
   if (pts.size() < 3) {
@@ -169,22 +155,28 @@ color_point_vector draw_Delone(const point_vector &pts) {
 
   edge_vector alive_edges, dead_edges;
 
-  alive_edges.push_back(get_start_edge(pts));
+  edge start_edge = get_start_edge(pts);
+  alive_edges.push_back(start_edge);
 
-  while (alive_edges.size() > 0) {
+  while (!alive_edges.empty()) {
 
-    edge last_edge = alive_edges[alive_edges.size() - 1];
-    update_alive_dead(alive_edges, dead_edges, last_edge);
+    edge current_edge = alive_edges.back();
 
-    point_vector near_points = get_oncircle_points(last_edge, pts);
+    update_alive_dead(alive_edges, dead_edges, current_edge);
 
-    for (const auto &p : near_points) {
-      edge edge_1 = {last_edge.first, p};
-      edge edge_2 = {last_edge.second, p};
-      if (!is_alive(alive_edges, edge_1))
-        update_alive_dead(alive_edges, dead_edges, edge_1);
-      if (!is_alive(alive_edges, edge_2))
-        update_alive_dead(alive_edges, dead_edges, edge_2);
+    point_vector candidates = get_oncircle_points(current_edge, pts);
+
+    for (const auto &p : candidates) {
+      edge edge1 = {current_edge.first, p};
+      edge edge2 = {current_edge.second, p};
+
+      if (!is_alive(alive_edges, edge1) && !is_alive(dead_edges, edge1)) {
+        update_alive_dead(alive_edges, dead_edges, edge1);
+      }
+
+      if (!is_alive(alive_edges, edge2) && !is_alive(dead_edges, edge2)) {
+        update_alive_dead(alive_edges, dead_edges, edge2);
+      }
     }
   }
 
@@ -192,13 +184,15 @@ color_point_vector draw_Delone(const point_vector &pts) {
     color_point_vector line = draw_CDA(e.first.first, e.first.second,
                                        e.second.first, e.second.second);
 
-    for (const auto &e1 : line) {
-      result.push_back(e1);
+    for (const auto &point : line) {
+      result.push_back(point);
     }
   }
 
   return result;
 }
+
+//////
 
 p_point_vector get_bounding_box(const p_point &min_xy, const p_point &max_xy) {
   return {min_xy,

@@ -22,4 +22,14 @@ point_vector get_oncircle_points(const edge &e, const point_vector &pts);
 void update_alive_dead(edge_vector &alive, edge_vector &dead, const edge &a);
 color_point_vector draw_Delone(const point_vector &pts);
 
+p_point_vector get_bounding_box(const p_point &min_xy, const p_point &max_xy);
+p_point_vector intersect_half_plane(const p_point_vector &current_region,
+                                    const point &p0, const point &p1,
+                                    const p_point &min_xy,
+                                    const p_point &max_xy);
+p_point_vector get_voronoi_cell_for_point(const point &p0,
+                                          const point_vector &pts,
+                                          const p_point &min_xy,
+                                          const p_point &max_xy);
+p_point_vector get_Voronoi_cell_vertexes(const point_vector &pts);
 color_point_vector draw_Voronoi(const point_vector &pts);
