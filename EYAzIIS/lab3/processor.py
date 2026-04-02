@@ -4,7 +4,8 @@ import time, os
 from data import DB, DB_NAME, DB_DIR, STATS_DB
 from data import SentenceData, TokenData, TextData
 from pydantic import ValidationError
-
+import stanza
+import json
 
 ROOT_IDX = -1
 
@@ -141,9 +142,21 @@ class DBManager:
 
 class Parser:
     def __init__(self) -> None:
-        self.nlp = spacy.load("en_core_web_sm")
+        # 1. Загружаем spaCy для dependency parse
+        self.nlp_spacy = spacy.load("en_core_web_sm")
+        
+        # 2. Загружаем stanza для constituency parse (только нужные процессоры)
+        #    Модель скачается автоматически при первом вызове
+        self.nlp_stanza = stanza.Pipeline(
+            lang='en',
+            processors='tokenize,pos,constituency',   # токенизация + дерево составляющих
+            use_gpu=False,
+            verbose=False
+        )
         self.manager = DBManager()
-    
+        print("(✓) Модели загружены: spaCy (dep) + stanza (constituency)")
+
+    # ---------- Вспомогательные методы для перевода тегов (остаются без изменений) ----------
     def get_tag_rus(self, tag: str) -> str:
         tag_map = {
             "$": "Символ (валюта)", "''": "Закрывающая кавычка", ",": "Запятая",
@@ -202,20 +215,45 @@ class Parser:
             "relcl": "Относительное придаточное", "xcomp": "Придаточное безличное"
         }
         return dep_map.get(dep_.lower(), f"Неизвестно ({dep_})")
-    
+
+    # ---------- Преобразование дерева составляющих из stanza в словарь ----------
+    @staticmethod
+    def _constituency_tree_to_dict(tree) -> dict:
+        """Рекурсивно превращает объект stanza.Tree в словарь для JSON."""
+        if tree.is_leaf():
+            # Терминальный узел (слово)
+            return {
+                "label": tree.label,
+                "children": []
+            }
+        else:
+            return {
+                "label": tree.label,
+                "children": [Parser._constituency_tree_to_dict(child) for child in tree.children]
+            }
+
+    # ---------- Основной метод парсинга ----------
     def parse_text_only(self, text: str) -> tuple[TextData, int, float]:
         if not text.strip():
             return None, 0, 0.0
-        
+
         start_time = time.time()
-        doc = self.nlp(text)
+        
+        # 1. Dependency parse через spaCy
+        doc_spacy = self.nlp_spacy(text)
+        
+        # 2. Constituency parse через stanza (обрабатываем весь текст целиком)
+        doc_stanza = self.nlp_stanza(text)
+        
         sentences = []
         word_count = 0
         
-        for i, sent in enumerate(doc.sents):
+        # Предполагаем, что количество предложений в spacy и stanza одинаково
+        # (для английского обычно совпадает)
+        for i, (sent_spacy, sent_stanza) in enumerate(zip(doc_spacy.sents, doc_stanza.sentences)):
+            # ----- Сбор токенов из spacy (dependency) -----
             tokens = []
-            
-            for token in sent:
+            for token in sent_spacy:
                 if (token.like_url or token.like_email or token.like_num or not token.text.strip()):
                     continue
                 
@@ -236,13 +274,24 @@ class Parser:
                 tokens.append(token_obj)
                 word_count += 1
             
-            sent_obj = SentenceData(id=i, text=sent.text, tokens=tokens)
+            # ----- Дерево составляющих из stanza -----
+            stanza_tree = sent_stanza.constituency
+            tree_dict = self._constituency_tree_to_dict(stanza_tree)
+            constituency_json = json.dumps(tree_dict, ensure_ascii=False)
+            
+            sent_obj = SentenceData(
+                id=i,
+                text=sent_spacy.text,   # берём текст из spacy (обычно совпадает)
+                tokens=tokens,
+                constituency_tree=constituency_json
+            )
             sentences.append(sent_obj)
         
         text_data = TextData(
             meta={
-                "language": "English", "model_used": "en_core_web_sm",
-                "processed_at": datetime.now().isoformat(),
+                "language": "English",
+                "model_used": "spacy_en_core_web_sm + stanza_en",
+                "processed_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
                 "total_sentences": len(sentences)
             },
             sentences=sentences
@@ -250,7 +299,8 @@ class Parser:
         
         duration = time.time() - start_time
         return text_data, word_count, duration
-    
+
+    # ---------- Публичный метод parse (сохраняет в БД) ----------
     def parse(self, text: str, name: str) -> tuple[int, float]:
         text_data, word_count, duration = self.parse_text_only(text)
         
