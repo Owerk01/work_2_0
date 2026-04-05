@@ -2,5 +2,5 @@
 #include "vars.h"
 #include <string>
 
-std::string gtype_to_string(GType type);
+std::string gtype_to_string(const GType &type);
 bool f_eq(const double &a, const double &b);

@@ -5,4 +5,4 @@ add_library(model
 )
 target_include_directories(model PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_link_libraries(model PRIVATE Qt6::Widgets Qt6::Gui Qt6::Core)
-target_link_libraries(model PRIVATE helpers view logic)
+target_link_libraries(model PRIVATE metadata view logic)
