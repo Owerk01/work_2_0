@@ -1,7 +1,7 @@
 import sqlite3 as sql
 import os
 from pydantic import BaseModel
-from typing import List
+from typing import List, Optional
 
 BASE_DIR = os.path.dirname(__file__)
 DB_DIR = os.path.join(BASE_DIR, "DB")
@@ -87,6 +87,7 @@ class SentenceData(BaseModel):
     id: int
     text: str
     tokens: List[TokenData]
+    constituency_tree: Optional[str] = None
 
 class TextData(BaseModel):
     meta: dict

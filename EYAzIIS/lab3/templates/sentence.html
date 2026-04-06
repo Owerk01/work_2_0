@@ -14,52 +14,87 @@
     </div>
 </div>
 
-<h3 class="mb-3">Визуализация дерева зависимостей</h3>
-<div class="card mb-4">
-    <div class="card-body">
-        <div id="tree-container" style="overflow: auto; min-height: 500px; border: 1px solid #dee2e6; border-radius: 4px;">
-            <svg id="dependency-tree"></svg>
+<!-- Вкладки для выбора типа дерева -->
+<ul class="nav nav-tabs mb-3" id="treeTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="dep-tab" data-bs-toggle="tab" data-bs-target="#dep" type="button" role="tab">
+            🌲 Дерево зависимостей
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="const-tab" data-bs-toggle="tab" data-bs-target="#const" type="button" role="tab">
+            📊 Дерево составляющих
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content">
+    <!-- Вкладка: дерево зависимостей -->
+    <div class="tab-pane fade show active" id="dep" role="tabpanel">
+        <div class="card mb-4">
+            <div class="card-body">
+                <div id="tree-container" style="overflow: auto; min-height: 500px; border: 1px solid #dee2e6; border-radius: 4px;">
+                    <svg id="dependency-tree"></svg>
+                </div>
+                <div class="mt-2 text-muted small">
+                    Используйте колёсико мыши для масштабирования, двигайте рабочую область и перетаскивайте узлы левой кнопкой мыши.
+                </div>
+            </div>
         </div>
-        <div class="mt-2 text-muted small">
-            Используйте колёсико мыши для масштабирования, двигайте рабочую область и перетаскивайте узлы левой кнопкой мыши
+        <div class="card mt-3">
+            <div class="card-header bg-light">
+                <strong>Структура дерева (текстовое представление)</strong>
+            </div>
+            <div class="card-body" id="tree-structure"></div>
+        </div>
+        <!-- Таблица токенов -->
+        <h3 class="mt-4 mb-3">Таблица токенов</h3>
+        <table class="table table-sm table-bordered">
+            <thead class="table-light">
+                <tr>
+                    <th>ID</th>
+                    <th>Слово</th>
+                    <th>Часть речи</th>
+                    <th>Синтаксическая роль</th>
+                    <th>Родитель</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for token in sentence.tokens %}
+                <tr>
+                    <td>{{ token.id }}</td>
+                    <td><strong>{{ token.word }}</strong></td>
+                    <td>{{ token.tag }}</td>
+                    <td>{{ token.dep }}</td>
+                    <td>{{ token.parent_word }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Вкладка: дерево составляющих -->
+    <div class="tab-pane fade" id="const" role="tabpanel">
+        <div class="card">
+            <div class="card-body">
+                <div id="const-tree-container" style="overflow: auto; min-height: 500px; border: 1px solid #dee2e6; border-radius: 4px;">
+                    <svg id="constituency-tree"></svg>
+                </div>
+                <div class="mt-2 text-muted small">
+                    Иерархическая структура фраз (NP, VP, PP и т.д.). Можно масштабировать колёсиком мыши.
+                </div>
+            </div>
         </div>
     </div>
 </div>
-
-<h3 class="mb-3">Структура дерева</h3>
-<div class="card">
-    <div class="card-body" id="tree-structure"></div>
-</div>
-
-<h3 class="mt-4 mb-3">Таблица токенов</h3>
-<table class="table table-sm table-bordered">
-    <thead class="table-light">
-        <tr>
-            <th>ID</th>
-            <th>Слово</th>
-            <th>Часть речи</th>
-            <th>Синтаксическая роль</th>
-            <th>Родитель</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for token in sentence.tokens %}
-        <tr>
-            <td>{{ token.id }}</td>
-            <td><strong>{{ token.word }}</strong></td>
-            <td>{{ token.tag }}</td>
-            <td>{{ token.dep }}</td>
-            <td>{{ token.parent_word }}</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
 {% endblock %}
 
 {% block scripts %}
 <script src="https://d3js.org/d3.v7.min.js"></script>
-<script src="https://unpkg.com/d3-graphviz@3.2.0/build/d3-graphviz.min.js"></script>
 <script>
+// --------------------------------------------------------------
+// 1. Дерево зависимостей (существующий код, слегка улучшенный)
+// --------------------------------------------------------------
 const tokens = [
     {% for token in sentence.tokens %}
     {
@@ -72,7 +107,7 @@ const tokens = [
     {% endfor %}
 ];
 
-function drawTree() {
+function drawDependencyTree() {
     const container = document.getElementById('tree-container');
     const width = container.clientWidth || 1200;
     const height = 600;
@@ -84,206 +119,214 @@ function drawTree() {
     svg.selectAll("*").remove();
     
     const tokenMap = new Map(tokens.map(t => [t.id, t]));
-    
     const roots = tokens.filter(t => t.parent_id === -1);
-    const root = roots.length > 0 ? roots[0] : tokens[0];
+    const rootToken = roots.length > 0 ? roots[0] : tokens[0];
     
     function buildHierarchy(rootToken, allTokens, visited = new Set()) {
-        if (visited.has(rootToken.id)) {
-            return null; 
-        }
+        if (visited.has(rootToken.id)) return null;
         visited.add(rootToken.id);
-        
-        const node = {
-            ...rootToken,
-            children: []
-        };
-        
+        const node = { ...rootToken, children: [] };
         const children = allTokens.filter(t => t.parent_id === rootToken.id);
         children.forEach(child => {
             const childNode = buildHierarchy(child, allTokens, visited);
-            if (childNode) {
-                node.children.push(childNode);
-            }
+            if (childNode) node.children.push(childNode);
         });
-        
         return node;
     }
     
     const visited = new Set();
-    const hierarchy = buildHierarchy(root, tokens, visited);
-    
-    const unreachableTokens = tokens.filter(t => !visited.has(t.id));
-    
-    let finalHierarchy = hierarchy;
-    if (unreachableTokens.length > 0 && hierarchy) {
-        unreachableTokens.forEach(token => {
-            hierarchy.children.push({
-                ...token,
-                children: [],
-                _unreachable: true
-            });
+    let hierarchy = buildHierarchy(rootToken, tokens, visited);
+    const unreachable = tokens.filter(t => !visited.has(t.id));
+    if (unreachable.length && hierarchy) {
+        unreachable.forEach(t => {
+            hierarchy.children.push({ ...t, children: [], _unreachable: true });
         });
-    } else if (!hierarchy && unreachableTokens.length > 0) {
-        finalHierarchy = {
-            id: -999,
-            word: "ROOT",
-            tag: "",
-            dep: "Корень",
-            parent_id: -1,
-            children: unreachableTokens.map(t => ({...t, children: []}))
+    } else if (!hierarchy && unreachable.length) {
+        hierarchy = {
+            id: -999, word: "ROOT", tag: "", dep: "Корень", parent_id: -1,
+            children: unreachable.map(t => ({ ...t, children: [] }))
         };
     }
     
-    const treeLayout = d3.tree()
-        .size([width - 100, height - 150])
-        .separation((a, b) => a.parent == b.parent ? 1.5 : 1);
-    
-    const root_d3 = d3.hierarchy(finalHierarchy);
+    const treeLayout = d3.tree().size([height - 100, width - 200]);
+    const root_d3 = d3.hierarchy(hierarchy);
     treeLayout(root_d3);
     
-    const g = svg.append("g")
-        .attr("transform", "translate(50, 80)");
-    const zoom = d3.zoom()
-        .scaleExtent([0.3, 2])
-        .on("zoom", (event) => {
-            g.attr("transform", event.transform);
-        });
-    
+    const g = svg.append("g").attr("transform", "translate(80, 60)");
+    const zoom = d3.zoom().scaleExtent([0.3, 2]).on("zoom", (event) => {
+        g.attr("transform", event.transform);
+    });
     svg.call(zoom);
     
-    const links = root_d3.links().filter(link => 
-        link.source.data.id !== -999
-    );
-    
-    const link = g.selectAll(".link")
+    const links = root_d3.links().filter(l => l.source.data.id !== -999);
+    g.selectAll(".link")
         .data(links)
         .enter()
         .append("path")
         .attr("class", "link")
-        .attr("d", d3.linkVertical()
-            .x(d => d.x)
-            .y(d => d.y))
+        .attr("d", d3.linkVertical().x(d => d.x).y(d => d.y))
         .attr("fill", "none")
         .attr("stroke", "#999")
         .attr("stroke-width", 2);
     
-    const linkLabels = g.selectAll(".link-label")
-        .data(links)
-        .enter()
-        .append("text")
-        .attr("class", "link-label")
-        .attr("x", d => (d.source.x + d.target.x) / 2)
-        .attr("y", d => (d.source.y + d.target.y) / 2 - 5)
-        .attr("text-anchor", "middle")
-        .attr("fill", "#666")
-        .attr("font-size", "10px")
-        .text(d => d.target.data.dep);
-    
     const nodes = root_d3.descendants().filter(d => d.data.id !== -999);
-    
-    const node = g.selectAll(".node")
+    const nodeGroups = g.selectAll(".node")
         .data(nodes)
         .enter()
         .append("g")
         .attr("class", "node")
         .attr("transform", d => `translate(${d.x},${d.y})`)
         .call(d3.drag()
-            .on("start", dragstarted)
-            .on("drag", dragged)
-            .on("end", dragended));
+            .on("start", function(event, d) {
+                d3.select(this).select("rect").attr("stroke", "#ff9800").attr("stroke-width", 3);
+            })
+            .on("drag", function(event, d) {
+                d.x = event.x; d.y = event.y;
+                d3.select(this).attr("transform", `translate(${d.x},${d.y})`);
+                g.selectAll(".link").attr("d", d3.linkVertical().x(d => d.x).y(d => d.y));
+            })
+            .on("end", function(event, d) {
+                d3.select(this).select("rect").attr("stroke", d.data._unreachable ? "#dc3545" : (d.data.parent_id === -1 ? "#ffc107" : "#17a2b8"));
+            }));
     
-    node.append("rect")
-        .attr("x", -60)
-        .attr("y", -25)
-        .attr("width", 120)
-        .attr("height", 50)
-        .attr("rx", 8)
-        .attr("ry", 8)
-        .attr("fill", d => {
-            if (d.data._unreachable) return "#f8d7da"; 
-            return d.data.parent_id === -1 ? "#fff3cd" : "#d1ecf1";
-        })
-        .attr("stroke", d => {
-            if (d.data._unreachable) return "#dc3545";
-            return d.data.parent_id === -1 ? "#ffc107" : "#17a2b8";
-        })
-        .attr("stroke-width", 2)
-        .attr("cursor", "pointer")
-        .append("title")
-        .text(d => d.data._unreachable ? "Недостижимый токен" : "");
+    nodeGroups.append("rect")
+        .attr("x", -60).attr("y", -25).attr("width", 120).attr("height", 50).attr("rx", 8)
+        .attr("fill", d => d.data._unreachable ? "#f8d7da" : (d.data.parent_id === -1 ? "#fff3cd" : "#d1ecf1"))
+        .attr("stroke", d => d.data._unreachable ? "#dc3545" : (d.data.parent_id === -1 ? "#ffc107" : "#17a2b8"))
+        .attr("stroke-width", 2);
     
-    node.append("text")
-        .attr("text-anchor", "middle")
-        .attr("y", -5)
-        .attr("font-weight", "bold")
-        .attr("font-size", "13px")
+    nodeGroups.append("text")
+        .attr("text-anchor", "middle").attr("y", -5).attr("font-weight", "bold")
         .text(d => d.data.word);
-    
-    node.append("text")
-        .attr("text-anchor", "middle")
-        .attr("y", 12)
-        .attr("font-size", "10px")
-        .attr("fill", "#666")
+    nodeGroups.append("text")
+        .attr("text-anchor", "middle").attr("y", 12).attr("font-size", "10px").attr("fill", "#666")
         .text(d => d.data.tag);
-
-    function dragstarted(event, d) {
-        d3.select(this).select("rect").attr("stroke", "#ff9800").attr("stroke-width", 3);
-    }
     
-    function dragged(event, d) {
-        d.x = event.x;
-        d.y = event.y;
-        d3.select(this).attr("transform", `translate(${d.x},${d.y})`);
-        
-        link.attr("d", d3.linkVertical()
-            .x(d => d.x)
-            .y(d => d.y));
-        
-        linkLabels
-            .attr("x", d => (d.source.x + d.target.x) / 2)
-            .attr("y", d => (d.source.y + d.target.y) / 2 - 5);
-    }
-    
-    function dragended(event, d) {
-        d3.select(this).select("rect")
-            .attr("stroke", d.data._unreachable ? "#dc3545" : (d.data.parent_id === -1 ? "#ffc107" : "#17a2b8"))
-            .attr("stroke-width", 2);
-    }
-    
-    svg.on("dblclick.zoom", null);
-    svg.on("dblclick", () => {
-        svg.transition().duration(750).call(zoom.transform, d3.zoomIdentity);
-    });
+    svg.on("dblclick", () => svg.transition().duration(750).call(zoom.transform, d3.zoomIdentity));
 }
 
 function drawTreeStructure() {
     const root = tokens.find(t => t.parent_id === -1) || tokens[0];
     const container = document.getElementById("tree-structure");
-    
-    function buildTreeHtml(token, allTokens, level = 0) {
+    function buildHtml(token, allTokens, level = 0) {
         const children = allTokens.filter(t => t.parent_id === token.id);
-        
-        let html = `
-            <div class="tree-node mb-2" style="margin-left: ${level * 30}px; animation: slideIn 0.3s ease-out;">
-                <span class="badge bg-primary me-2 fs-6">${token.word}</span>
-                <span class="badge bg-secondary me-2">${token.tag}</span>
-                <span class="badge bg-info text-dark">${token.dep}</span>
-            </div>
-        `;
-        
-        children.forEach(child => {
-            html += buildTreeHtml(child, allTokens, level + 1);
-        });
-        
+        let html = `<div class="tree-node mb-2" style="margin-left: ${level * 30}px;">
+                        <span class="badge bg-primary me-2 fs-6">${token.word}</span>
+                        <span class="badge bg-secondary me-2">${token.tag}</span>
+                        <span class="badge bg-info text-dark">${token.dep}</span>
+                    </div>`;
+        children.forEach(child => { html += buildHtml(child, allTokens, level + 1); });
         return html;
     }
-    
-    container.innerHTML = buildTreeHtml(root, tokens);
+    container.innerHTML = buildHtml(root, tokens);
 }
 
-const style = document.createElement('style');
-style.textContent = `
+// --------------------------------------------------------------
+// 2. Дерево составляющих
+// --------------------------------------------------------------
+const constTreeData = {{ sentence.constituency_tree | safe if sentence.constituency_tree else 'null' }};
+
+function drawConstituencyTree() {
+    if (!constTreeData) {
+        document.getElementById('const-tree-container').innerHTML = '<div class="alert alert-warning">⚠️ Дерево составляющих не доступно для этого предложения.</div>';
+        return;
+    }
+    
+    const container = document.getElementById('const-tree-container');
+    const width = container.clientWidth || 1000;
+    const height = 600;
+    
+    const svg = d3.select("#constituency-tree")
+        .attr("width", width)
+        .attr("height", height)
+        .style("background", "#fafafa");
+    svg.selectAll("*").remove();
+    
+    const root = d3.hierarchy(constTreeData);
+    const treeLayout = d3.tree().size([height - 100, width - 200]);
+    treeLayout(root);
+    
+    const g = svg.append("g").attr("transform", "translate(80, 60)");
+    const zoom = d3.zoom().scaleExtent([0.3, 2]).on("zoom", (event) => {
+        g.attr("transform", event.transform);
+    });
+    svg.call(zoom);
+    
+    // Линии
+    g.selectAll(".link")
+        .data(root.links())
+        .enter()
+        .append("path")
+        .attr("class", "link")
+        .attr("d", d3.linkVertical().x(d => d.y).y(d => d.x))
+        .attr("fill", "none")
+        .attr("stroke", "#aaa")
+        .attr("stroke-width", 1.5);
+    
+    // Узлы
+    const nodes = g.selectAll(".node")
+        .data(root.descendants())
+        .enter()
+        .append("g")
+        .attr("class", "node")
+        .attr("transform", d => `translate(${d.y}, ${d.x})`);
+    
+    nodes.append("rect")
+        .attr("x", -45)
+        .attr("y", -18)
+        .attr("width", 90)
+        .attr("height", 36)
+        .attr("rx", 6)
+        .attr("fill", "#e3f2fd")
+        .attr("stroke", "#1e88e5")
+        .attr("stroke-width", 1.5);
+    
+    nodes.append("text")
+        .attr("text-anchor", "middle")
+        .attr("dy", "0.35em")
+        .attr("font-size", "12px")
+        .attr("font-family", "monospace")
+        .text(d => d.data.label);
+    
+    svg.on("dblclick", () => svg.transition().duration(750).call(zoom.transform, d3.zoomIdentity));
+}
+
+// --------------------------------------------------------------
+// 3. Инициализация и перерисовка при переключении вкладок
+// --------------------------------------------------------------
+document.getElementById('dep-tab').addEventListener('shown.bs.tab', function (e) {
+    drawDependencyTree();
+    drawTreeStructure();
+});
+document.getElementById('const-tab').addEventListener('shown.bs.tab', function (e) {
+    drawConstituencyTree();
+});
+
+// Стартовая отрисовка (для дерева зависимостей и текстовой структуры)
+setTimeout(() => {
+    drawDependencyTree();
+    drawTreeStructure();
+    // Если дерево составляющих есть – предварительно не рисуем, только по переключению
+    if (constTreeData) drawConstituencyTree();
+}, 100);
+
+// Адаптация при изменении размера окна
+let resizeTimeout;
+window.addEventListener('resize', () => {
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(() => {
+        if (document.getElementById('dep').classList.contains('active')) {
+            drawDependencyTree();
+            drawTreeStructure();
+        } else if (document.getElementById('const').classList.contains('active')) {
+            drawConstituencyTree();
+        }
+    }, 250);
+});
+</script>
+
+<!-- Дополнительные стили -->
+<style>
     .tree-node {
         padding: 8px;
         border-left: 3px solid #17a2b8;
@@ -295,31 +338,16 @@ style.textContent = `
         transform: translateX(5px);
         background: #e9ecef;
     }
-    @keyframes slideIn {
-        from { opacity: 0; transform: translateX(-20px); }
-        to { opacity: 1; transform: translateX(0); }
+    .node rect {
+        transition: all 0.2s;
+        cursor: grab;
+    }
+    .node:hover rect {
+        fill: #ffe0b2;
+        stroke: #f57c00;
     }
     .link {
         transition: stroke-width 0.2s;
     }
-    .node:hover rect {
-        filter: brightness(0.9);
-    }
-`;
-document.head.appendChild(style);
-
-setTimeout(() => {
-    drawTree();
-    drawTreeStructure();
-}, 100);
-
-let resizeTimeout;
-window.addEventListener('resize', () => {
-    clearTimeout(resizeTimeout);
-    resizeTimeout = setTimeout(() => {
-        drawTree();
-        drawTreeStructure();
-    }, 250);
-});
-</script>
+</style>
 {% endblock %}
