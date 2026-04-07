@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function mockSystemResponse(userText) {
         const lower = userText.toLowerCase();
-        let reply = "Спасибо за вопрос! В рамках предметной области Досуг я обрабатываю ваш запрос.";
+        let reply = "Hey!";
         
         if (lower.includes('привет') || lower.includes('здравствуй')) {
             reply = "Здравствуйте! Чем могу помочь по теме досуга?";
