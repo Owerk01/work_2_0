@@ -61,7 +61,6 @@ class SQLhelper:
             (user_id, position)
         )
 
-    # 🔹 Статистика времени ответа
     def save_response_duration(self, duration: float) -> None:
         self.db.execute_query(
             f"INSERT INTO {STATS_DB} (answer_duration) VALUES (?)",

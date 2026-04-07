@@ -42,7 +42,6 @@ document.addEventListener('DOMContentLoaded', () => {
         scrollToBottom();
     }
 
-    // 🔹 Делегирование событий для редактирования/удаления
     chatWindow.addEventListener('click', async (e) => {
         const btn = e.target.closest('.edit-btn, .delete-btn');
         if (!btn) return;
@@ -128,7 +127,6 @@ document.addEventListener('DOMContentLoaded', () => {
         userInput.value = '';
         userInput.style.height = 'auto';
 
-        // Создаём сообщение пользователя временно без позиции
         const userMsg = document.createElement('div');
         userMsg.classList.add('message', 'user');
         userMsg.innerHTML = `
@@ -162,7 +160,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await res.json();
             addMessage(data.response, 'system', data.position);
 
-            // Присваиваем позицию сообщению пользователя и показываем кнопки
             userMsg.dataset.position = data.position;
             userMsg.querySelector('.msg-actions').style.display = '';
         } catch (error) {

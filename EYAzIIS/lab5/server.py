@@ -42,7 +42,6 @@ def chat():
 
     start_time = time.time()
 
-    # 🔹 Генерация ответа (тестовый режим или API)
     if not os.getenv('QWEN_API_KEY'):
         hobby_keywords = ['knit', 'chess', 'garden', 'photo', 'paint', 'cook', 'fish', 'hike', 'hobby', 'craft', 'diy']
         if any(kw in user_query.lower() for kw in hobby_keywords):
@@ -67,13 +66,12 @@ def chat():
                 'details': str(e)[:150]
             }), 502
 
-    # 🔹 Замер времени, сохранение и логирование
     duration = time.time() - start_time
     pos = helper.save_message_pair(user_id, user_query, bot_reply)
     
     helper.save_response_duration(duration)
     avg_duration = helper.get_average_duration()
-    print(f"✅ User {user_id} | Current: {duration:.2f}s | Avg: {avg_duration:.3f}s")
+    print(f"User {user_id} | Current: {duration:.2f}s | Avg: {avg_duration:.3f}s")
 
     return jsonify({'response': bot_reply, 'position': pos})
 

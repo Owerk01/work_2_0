@@ -108,7 +108,7 @@ body {
 
 /* === MESSAGES === */
 .message {
-    position: relative; /* 🔹 Обязательно для абсолютного позиционирования кнопок */
+    position: relative; 
     max-width: 78%;
     padding: 12px 16px;
     border-radius: 16px;
