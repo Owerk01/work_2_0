@@ -1,0 +1,4 @@
+.env/
+DB/
+venv/
+.venv/

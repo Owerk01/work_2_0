@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>HobbyBot</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app-container">
+    <!-- === HEADER === -->
+    <header class="app-header">
+      <div class="header-left">
+        <h1>🎨 HobbyBot</h1>
+        <small id="user-badge">User: <span id="current-user">guest</span></small>
+      </div>
+      <div class="header-right">
+        <button id="delete-chat-btn" class="danger-btn" title="Delete entire chat">🗑️</button>
+        <button id="toggle-help" class="help-btn">❓</button>
+      </div>
+    </header>
+
+    <!-- === CHAT AREA === -->
+    <div class="chat-wrapper">
+      <div id="chat-window" class="chat-messages">
+        <!-- Сообщения добавляются динамически -->
+        <div class="message system">
+          <div class="message-content">Hey! I'm your hobby assistant. Ask me about crafts, sports, collections, DIY — anything for fun! 🎯</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- === INPUT AREA === -->
+    <div class="chat-input-area">
+      <textarea id="user-input" placeholder="Ask about your hobby..." rows="1"></textarea>
+      <button id="send-btn" class="send-button">➤</button>
+    </div>
+
+    <!-- === HELP PANEL === -->
+    <aside id="help-panel" class="help-panel">
+      <h3>ℹ️ How to use</h3>
+      <ul>
+        <li>Ask questions about <strong>hobbies only</strong> (knitting, chess, gardening...)</li>
+        <li>All answers are in <strong>English</strong></li>
+        <li>Your chat is saved locally. Use 🗑️ to reset.</li>
+        <li>Change user ID in settings to switch accounts.</li>
+      </ul>
+      <button id="close-help" class="close-help">Close</button>
+    </aside>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
