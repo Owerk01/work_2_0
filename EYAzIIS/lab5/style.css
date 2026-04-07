@@ -1,0 +1,202 @@
+:root {
+    --bg: #f4f6f9;
+    --card: #ffffff;
+    --primary: #2563eb;
+    --primary-hover: #1d4ed8;
+    --user-bubble: #e0f2fe;
+    --user-text: #0c4a6e;
+    --sys-bubble: #f3f4f6;
+    --sys-text: #374151;
+    --border: #e5e7eb;
+    --radius: 14px;
+    --shadow: 0 4px 12px rgba(0,0,0,0.06);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: #111827;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 16px;
+}
+
+.app-container {
+    width: 100%;
+    max-width: 850px;
+    height: 90vh;
+    max-height: 800px;
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+}
+
+/* === HEADER === */
+.app-header {
+    padding: 16px 20px;
+    background: linear-gradient(135deg, var(--primary), #4f46e5);
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0; /* 🔹 Не сжимается */
+}
+.header-left h1 { font-size: 1.15rem; font-weight: 600; }
+.help-btn {
+    background: rgba(255,255,255,0.2);
+    border: none;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    color: white;
+    cursor: pointer;
+    font-size: 1.1rem;
+    transition: background 0.2s;
+}
+.help-btn:hover { background: rgba(255,255,255,0.35); }
+
+/* === CHAT AREA === */
+.chat-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: #fafbfc;
+    min-height: 0; /* 🔹 Ключевое для работы скролла внутри flex */
+}
+
+.chat-messages {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto; /* 🔹 Вертикальный скролл */
+    overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    scroll-behavior: smooth;
+    min-height: 0; /* 🔹 Обязательно для вложенного скролла */
+}
+.chat-messages::-webkit-scrollbar { width: 6px; }
+.chat-messages::-webkit-scrollbar-thumb { 
+    background: #cbd5e1; 
+    border-radius: 10px; 
+}
+.chat-messages::-webkit-scrollbar-track { background: transparent; }
+
+/* === MESSAGES === */
+.message {
+    max-width: 78%;
+    padding: 12px 16px;
+    border-radius: 16px;
+    line-height: 1.5;
+    animation: slideIn 0.25s ease-out;
+    word-wrap: break-word; /* 🔹 Перенос длинных слов */
+}
+@keyframes slideIn { 
+    from { opacity: 0; transform: translateY(10px); } 
+    to { opacity: 1; transform: translateY(0); } 
+}
+
+.user { 
+    align-self: flex-end; 
+    background: var(--user-bubble); 
+    color: var(--user-text); 
+    border-bottom-right-radius: 4px; 
+}
+.system { 
+    align-self: flex-start; 
+    background: var(--sys-bubble); 
+    color: var(--sys-text); 
+    border-bottom-left-radius: 4px; 
+}
+.message-content { white-space: pre-wrap; } /* 🔹 Сохраняет переносы строк из ввода */
+
+/* === INPUT AREA === */
+.chat-input-area {
+    display: flex;
+    gap: 10px;
+    padding: 16px;
+    background: var(--card);
+    border-top: 1px solid var(--border);
+    flex-shrink: 0; /* 🔹 Не сжимается, всегда видна */
+}
+
+#user-input {
+    flex: 1;
+    padding: 12px 16px;
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    resize: none; /* 🔹 Отключаем ручное изменение размера */
+    font-family: inherit;
+    font-size: 0.95rem;
+    outline: none;
+    line-height: 1.4;
+    max-height: 120px; /* 🔹 Ограничение высоты перед скроллом */
+    overflow-y: auto; /* 🔹 Скролл внутри textarea */
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+#user-input::-webkit-scrollbar { width: 4px; }
+#user-input::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 4px; }
+
+#user-input:focus { 
+    border-color: var(--primary); 
+    box-shadow: 0 0 0 3px rgba(37,99,235,0.1); 
+}
+
+.send-button {
+    background: var(--primary);
+    color: white;
+    border: none;
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s, transform 0.1s;
+    flex-shrink: 0;
+}
+.send-button:hover { background: var(--primary-hover); }
+.send-button:active { transform: scale(0.95); }
+
+/* === HELP PANEL === */
+.help-panel {
+    position: absolute;
+    right: 0; top: 0;
+    width: 280px;
+    height: 100%;
+    background: #f9fafb;
+    border-left: 1px solid var(--border);
+    padding: 20px;
+    transform: translateX(100%);
+    transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+    z-index: 10;
+    overflow-y: auto; /* 🔹 Скролл внутри панели, если контент не влезает */
+}
+.help-panel.open { transform: translateX(0); }
+.help-panel h3 { color: var(--primary); margin-bottom: 12px; }
+.help-panel ul { padding-left: 20px; margin-bottom: 20px; line-height: 1.6; }
+.close-help {
+    width: 100%;
+    padding: 8px;
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+}
+.close-help:hover { background: #f3f4f6; }
+
+/* === RESPONSIVE === */
+@media (max-width: 768px) {
+    .app-container { height: 100vh; max-height: none; border-radius: 0; }
+    .message { max-width: 85%; }
+    .help-panel { width: 100%; }
+}
