@@ -2,13 +2,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const chatWindow = document.getElementById('chat-window');
   const userInput = document.getElementById('user-input');
   const sendBtn = document.getElementById('send-btn');
-  const deleteBtn = document.getElementById('delete-chat-btn'); // новая кнопка
+  const deleteBtn = document.getElementById('delete-chat-btn'); 
   const helpPanel = document.getElementById('help-panel');
   const toggleHelpBtn = document.getElementById('toggle-help');
   const closeHelpBtn = document.getElementById('close-help');
   const currentUserEl = document.getElementById('current-user');
 
-  // 🔑 Инициализация пользователя
+  
   let USER_ID = localStorage.getItem('hobby_user_id');
   if (!USER_ID) {
     USER_ID = Math.floor(Math.random() * 1e9).toString();
@@ -34,7 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
     chatWindow.scrollTop = chatWindow.scrollHeight;
   }
 
-  // 📡 Загрузка истории
+  
   async function loadChat() {
     try {
       const res = await fetch(`/api/chat/${USER_ID}`);
@@ -56,10 +56,10 @@ document.addEventListener('DOMContentLoaded', () => {
     userInput.value = '';
     userInput.style.height = 'auto';
 
-    // Индикатор "печатает..."
+    
     const typing = document.createElement('div');
     typing.className = 'message system';
-    typing.innerHTML = `<div class="message-content">🤔 Thinking...</div>`;
+    typing.innerHTML = `<div class="message-content">Thinking...</div>`;
     chatWindow.appendChild(typing);
     scrollToBottom();
 
@@ -81,7 +81,7 @@ document.addEventListener('DOMContentLoaded', () => {
       addMessage(data.response, 'system');
     } catch (error) {
       typing.remove();
-      addMessage(`⚠️ Error: ${error.message}`, 'system');
+      addMessage(`Error: ${error.message}`, 'system');
       console.error('Chat error:', error);
     }
   }
@@ -98,7 +98,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // 🎯 Обработчики
+  
   sendBtn.addEventListener('click', handleSend);
   if (deleteBtn) deleteBtn.addEventListener('click', handleDeleteChat);
 

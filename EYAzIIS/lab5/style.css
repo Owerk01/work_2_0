@@ -47,7 +47,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    flex-shrink: 0; /* 🔹 Не сжимается */
+    flex-shrink: 0;
 }
 .header-left h1 { font-size: 1.15rem; font-weight: 600; }
 .help-btn {
@@ -69,13 +69,13 @@ body {
     display: flex;
     flex-direction: column;
     background: #fafbfc;
-    min-height: 0; /* 🔹 Ключевое для работы скролла внутри flex */
+    min-height: 0;
 }
 
 .chat-messages {
     flex: 1;
     padding: 20px;
-    overflow-y: auto; /* 🔹 Вертикальный скролл */
+    overflow-y: auto;
     overflow-x: hidden;
     display: flex;
     flex-direction: column;
@@ -97,7 +97,7 @@ body {
     border-radius: 16px;
     line-height: 1.5;
     animation: slideIn 0.25s ease-out;
-    word-wrap: break-word; /* 🔹 Перенос длинных слов */
+    word-wrap: break-word;
 }
 @keyframes slideIn { 
     from { opacity: 0; transform: translateY(10px); } 
@@ -116,7 +116,7 @@ body {
     color: var(--sys-text); 
     border-bottom-left-radius: 4px; 
 }
-.message-content { white-space: pre-wrap; } /* 🔹 Сохраняет переносы строк из ввода */
+.message-content { white-space: pre-wrap; }
 
 /* === INPUT AREA === */
 .chat-input-area {
@@ -125,7 +125,7 @@ body {
     padding: 16px;
     background: var(--card);
     border-top: 1px solid var(--border);
-    flex-shrink: 0; /* 🔹 Не сжимается, всегда видна */
+    flex-shrink: 0;
 }
 
 #user-input {
@@ -133,13 +133,13 @@ body {
     padding: 12px 16px;
     border: 1px solid var(--border);
     border-radius: 24px;
-    resize: none; /* 🔹 Отключаем ручное изменение размера */
+    resize: none;
     font-family: inherit;
     font-size: 0.95rem;
     outline: none;
     line-height: 1.4;
-    max-height: 120px; /* 🔹 Ограничение высоты перед скроллом */
-    overflow-y: auto; /* 🔹 Скролл внутри textarea */
+    max-height: 120px;
+    overflow-y: auto;
     transition: border-color 0.2s, box-shadow 0.2s;
 }
 #user-input::-webkit-scrollbar { width: 4px; }
@@ -179,7 +179,7 @@ body {
     transform: translateX(100%);
     transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
     z-index: 10;
-    overflow-y: auto; /* 🔹 Скролл внутри панели, если контент не влезает */
+    overflow-y: auto;
 }
 .help-panel.open { transform: translateX(0); }
 .help-panel h3 { color: var(--primary); margin-bottom: 12px; }
@@ -201,7 +201,6 @@ body {
     .help-panel { width: 100%; }
 }
 
-/* Добавьте в конец вашего style.css */
 
 .danger-btn {
   background: rgba(220, 38, 38, 0.2);
@@ -235,7 +234,6 @@ body {
   margin-top: 2px;
 }
 
-/* Анимация удаления */
 @keyframes fadeOut {
   to { opacity: 0; transform: scale(0.98); }
 }
