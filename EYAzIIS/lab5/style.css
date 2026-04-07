@@ -63,6 +63,25 @@ body {
 }
 .help-btn:hover { background: rgba(255,255,255,0.35); }
 
+.danger-btn {
+  background: rgba(220, 38, 38, 0.2);
+  border: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  color: #dc2626;
+  cursor: pointer;
+  font-size: 1.1rem;
+  transition: all 0.2s;
+  margin-left: 8px;
+}
+.danger-btn:hover {
+  background: rgba(220, 38, 38, 0.35);
+  transform: scale(1.05);
+}
+.danger-btn:active {
+  transform: scale(0.95);
+}
 /* === CHAT AREA === */
 .chat-wrapper {
     flex: 1;
