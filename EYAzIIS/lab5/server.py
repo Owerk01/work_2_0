@@ -40,36 +40,42 @@ def chat():
         {"role": "user", "content": user_query}
     ]
 
+    start_time = time.time()
+
+    # 🔹 Генерация ответа (тестовый режим или API)
     if not os.getenv('QWEN_API_KEY'):
         hobby_keywords = ['knit', 'chess', 'garden', 'photo', 'paint', 'cook', 'fish', 'hike', 'hobby', 'craft', 'diy']
         if any(kw in user_query.lower() for kw in hobby_keywords):
             bot_reply = f"Great hobby question! (Test mode) Here's a tip about {user_query[:30]}..."
         else:
             bot_reply = "I specialize in hobby topics! Ask me about knitting, chess, birdwatching, or any leisure activity"
-        pos = helper.save_message_pair(user_id, user_query, bot_reply)
-        return jsonify({'response': bot_reply, 'position': pos})
+    else:
+        try:
+            client = get_client()
+            response = client.chat.completions.create(
+                model="qwen3-32b",
+                messages=messages,
+                temperature=0.3,
+                top_p=0.8,
+                max_tokens=500
+            )
+            bot_reply = response.choices[0].message.content.strip()
+        except Exception as e:
+            print(f"API Error: {type(e).__name__}: {e}")
+            return jsonify({
+                'error': 'Failed to get response',
+                'details': str(e)[:150]
+            }), 502
 
-    start_time = time.time()
-    try:
-        client = get_client()
-        response = client.chat.completions.create(
-            model="qwen3-32b",
-            messages=messages,
-            temperature=0.3,
-            top_p=0.8,
-            max_tokens=500
-        )
-        bot_reply = response.choices[0].message.content.strip()
-        pos = helper.save_message_pair(user_id, user_query, bot_reply)
-        duration = time.time() - start_time
-        print(f"Response in {duration:.2f}s for user {user_id}")
-        return jsonify({'response': bot_reply, 'position': pos})
-    except Exception as e:
-        print(f"API Error: {type(e).__name__}: {e}")
-        return jsonify({
-            'error': 'Failed to get response',
-            'details': str(e)[:150]
-        }), 502
+    # 🔹 Замер времени, сохранение и логирование
+    duration = time.time() - start_time
+    pos = helper.save_message_pair(user_id, user_query, bot_reply)
+    
+    helper.save_response_duration(duration)
+    avg_duration = helper.get_average_duration()
+    print(f"✅ User {user_id} | Current: {duration:.2f}s | Avg: {avg_duration:.3f}s")
+
+    return jsonify({'response': bot_reply, 'position': pos})
 
 @app.route('/api/chat/<int:user_id>', methods=['GET'])
 def get_chat(user_id):
@@ -85,7 +91,6 @@ def delete_chat(user_id):
     helper.delete_chat(user_id)
     return jsonify({'status': 'deleted', 'chat_id': user_id})
 
-# 🔹 Редактирование отдельного хода
 @app.route('/api/chat/<int:user_id>/message/<int:position>', methods=['PATCH'])
 def edit_message(user_id, position):
     data = request.json
@@ -97,7 +102,6 @@ def edit_message(user_id, position):
         helper.update_turn(user_id, position, response=new_text)
     return jsonify({'status': 'updated'})
 
-# 🔹 Удаление отдельного хода
 @app.route('/api/chat/<int:user_id>/message/<int:position>', methods=['DELETE'])
 def delete_message(user_id, position):
     helper.delete_turn(user_id, position)
