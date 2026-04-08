@@ -42,19 +42,15 @@ def chat():
     start_time = time.time()
 
     if not os.getenv('QWEN_API_KEY'):
-        hobby_keywords = ['knit', 'chess', 'garden', 'photo', 'paint', 'cook', 'fish', 'hike', 'hobby', 'craft', 'diy']
-        if any(kw in user_query.lower() for kw in hobby_keywords):
-            bot_reply = f"Great hobby question! (Test mode) Here's a tip about {user_query[:30]}..."
-        else:
-            bot_reply = "I specialize in hobby topics! Ask me about knitting, chess, birdwatching, or any leisure activity"
+
+        bot_reply = "API key is not accessible"
     else:
         try:
             client = get_client()
             response = client.chat.completions.create(
                 model="qwen3-32b",
                 messages=messages,
-                temperature=0.3,
-                top_p=0.8,
+                temperature=0.2,
                 max_tokens=500
             )
             bot_reply = response.choices[0].message.content.strip()

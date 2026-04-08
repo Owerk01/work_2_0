@@ -5,14 +5,12 @@ class SQLhelper:
         self.db = DB()
 
     def save_message_pair(self, query: str, response: str) -> int:
-        # Ищем максимальную позицию в единой таблице
         result = self.db.select_query(
             f"SELECT message_position FROM {DB_NAME} ORDER BY message_position DESC LIMIT 1",
             ()
         )
         next_pos = result[0][0] + 1 if result else 1
 
-        # Вставка без chat_id
         self.db.execute_query(
             f"INSERT INTO {DB_NAME} (message_position, query, response) VALUES (?, ?, ?)",
             (next_pos, query, response)
@@ -20,7 +18,7 @@ class SQLhelper:
         return next_pos
 
     def delete_chat(self) -> int:
-        # Полная очистка таблицы, так как разделения по пользователям больше нет
+
         self.db.execute_query(f"DELETE FROM {DB_NAME}", ())
         return self.db.crs.rowcount
 

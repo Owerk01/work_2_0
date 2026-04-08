@@ -19,7 +19,6 @@ class DB:
         self.crs.execute(f"""
             CREATE TABLE IF NOT EXISTS {DB_NAME} (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                chat_id INTEGER NOT NULL,
                 message_position INTEGER NOT NULL,
                 query TEXT NOT NULL,
                 response TEXT NOT NULL,

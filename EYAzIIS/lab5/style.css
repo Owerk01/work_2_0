@@ -1,12 +1,12 @@
 :root {
     --bg: #f4f6f9;
     --card: #ffffff;
-    --primary: #2563eb;
-    --primary-hover: #1d4ed8;
+    --primary: #4e82f1;
+    --primary-hover: #7692e1;
     --user-bubble: #e0f2fe;
-    --user-text: #0c4a6e;
+    --user-text: #08354f;
     --sys-bubble: #f3f4f6;
-    --sys-text: #374151;
+    --sys-text: #1b2129;
     --border: #e5e7eb;
     --radius: 14px;
     --shadow: 0 4px 12px rgba(0,0,0,0.06);
@@ -15,15 +15,17 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
-    background: var(--bg);
-    color: #111827;
-    height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 16px;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background: linear-gradient(135deg, #e0c3fc 0%, #a3aaff 100%); 
+  color: #111827;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 16px;
 }
+
+
 
 .app-container {
     width: 100%;
@@ -42,7 +44,7 @@ body {
 /* === HEADER === */
 .app-header {
     padding: 16px 20px;
-    background: linear-gradient(135deg, var(--primary), #4f46e5);
+    background: linear-gradient(135deg, var(--primary), #6861e6);
     color: white;
     display: flex;
     justify-content: space-between;
