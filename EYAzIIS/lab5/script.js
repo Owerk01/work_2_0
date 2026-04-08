@@ -6,14 +6,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const helpPanel = document.getElementById('help-panel');
     const toggleHelpBtn = document.getElementById('toggle-help');
     const closeHelpBtn = document.getElementById('close-help');
-    const currentUserEl = document.getElementById('current-user');
-
-    let USER_ID = localStorage.getItem('hobby_user_id');
-    if (!USER_ID) {
-        USER_ID = Math.floor(Math.random() * 1e9).toString();
-        localStorage.setItem('hobby_user_id', USER_ID);
-    }
-    if (currentUserEl) currentUserEl.textContent = `User: ${USER_ID}`;
 
     function escapeHtml(str) {
         const div = document.createElement('div');
@@ -52,14 +44,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const contentEl = msgEl.querySelector('.message-content');
 
         if (btn.classList.contains('delete-btn')) {
-            if (!confirm('Удалить этот ход разговора (вопрос + ответ)?')) return;
+            if (!confirm('Delete this chat?')) return;
             msgEl.classList.add('deleting');
             try {
-                await fetch(`/api/chat/${USER_ID}/message/${position}`, { method: 'DELETE' });
+                await fetch(`/api/chat/message/${position}`, { method: 'DELETE' });
                 setTimeout(() => msgEl.remove(), 300);
             } catch (err) {
                 msgEl.classList.remove('deleting');
-                alert('Ошибка удаления: ' + err.message);
+                alert('Error while deleteting: ' + err.message);
             }
         } else if (btn.classList.contains('edit-btn')) {
             const currentText = contentEl.textContent;
@@ -83,7 +75,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     return;
                 }
                 try {
-                    await fetch(`/api/chat/${USER_ID}/message/${position}`, {
+                    await fetch(`/api/chat/message/${position}`, {
                         method: 'PATCH',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ role: sender, text: newText })
@@ -92,7 +84,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     contentEl.innerHTML = escapeHtml(newText);
                     msgEl.querySelector('.msg-actions').style.display = '';
                 } catch (err) {
-                    alert('Ошибка сохранения: ' + err.message);
+                    alert('Error of saving: ' + err.message);
                 }
             };
 
@@ -110,7 +102,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function loadChat() {
         try {
-            const res = await fetch(`/api/chat/${USER_ID}`);
+            const res = await fetch('/api/chat');
             if (res.ok) {
                 const messages = await res.json();
                 chatWindow.innerHTML = '';
@@ -148,7 +140,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const res = await fetch('/api/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ user_id: USER_ID, query: text })
+                body: JSON.stringify({ query: text })
             });
             typing.remove();
 
@@ -159,7 +151,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const data = await res.json();
             addMessage(data.response, 'system', data.position);
-
             userMsg.dataset.position = data.position;
             userMsg.querySelector('.msg-actions').style.display = '';
         } catch (error) {
@@ -172,7 +163,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function handleDeleteChat() {
         if (!confirm('Delete entire chat history?')) return;
         try {
-            const res = await fetch(`/api/chat/${USER_ID}`, { method: 'DELETE' });
+            const res = await fetch('/api/chat', { method: 'DELETE' });
             if (res.ok) chatWindow.innerHTML = '';
         } catch (e) {
             alert('Failed to delete: ' + e.message);

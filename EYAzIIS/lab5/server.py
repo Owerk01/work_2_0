@@ -29,11 +29,10 @@ def get_client():
 
 @app.route('/api/chat', methods=['POST'])
 def chat():
-    data = request.json
-    user_id = data.get('user_id')
+    data = request.json or {}
     user_query = data.get('query', '').strip()
-    if not user_id or not user_query:
-        return jsonify({'error': 'user_id and query required'}), 400
+    if not user_query:
+        return jsonify({'error': 'query required'}), 400
 
     messages = [
         {"role": "system", "content": HOBBY_SYSTEM_PROMPT},
@@ -67,50 +66,43 @@ def chat():
             }), 502
 
     duration = time.time() - start_time
-    pos = helper.save_message_pair(user_id, user_query, bot_reply)
+    pos = helper.save_message_pair(user_query, bot_reply)
     
     helper.save_response_duration(duration)
     avg_duration = helper.get_average_duration()
-    print(f"User {user_id} | Current: {duration:.2f}s | Avg: {avg_duration:.3f}s")
+    print(f"Current: {duration:.2f}s | Avg: {avg_duration:.3f}s")
 
     return jsonify({'response': bot_reply, 'position': pos})
 
-@app.route('/api/chat/<int:user_id>', methods=['GET'])
-def get_chat(user_id):
-    messages = helper.get_all_chat_messages(user_id)
+@app.route('/api/chat', methods=['GET'])
+def get_chat():
+    messages = helper.get_all_chat_messages()
     formatted = []
     for pos, query, response in messages:
         formatted.append({'sender': 'user', 'text': query, 'position': pos})
         formatted.append({'sender': 'system', 'text': response, 'position': pos})
     return jsonify(formatted)
 
-@app.route('/api/chat/<int:user_id>', methods=['DELETE'])
-def delete_chat(user_id):
-    helper.delete_chat(user_id)
-    return jsonify({'status': 'deleted', 'chat_id': user_id})
+@app.route('/api/chat', methods=['DELETE'])
+def delete_chat():
+    helper.delete_chat()
+    return jsonify({'status': 'deleted'})
 
-@app.route('/api/chat/<int:user_id>/message/<int:position>', methods=['PATCH'])
-def edit_message(user_id, position):
-    data = request.json
+@app.route('/api/chat/message/<int:position>', methods=['PATCH'])
+def edit_message(position):
+    data = request.json or {}
     role = data.get('role')
     new_text = data.get('text', '').strip()
     if role == 'user':
-        helper.update_turn(user_id, position, query=new_text)
+        helper.update_turn(position, query=new_text)
     elif role == 'system':
-        helper.update_turn(user_id, position, response=new_text)
+        helper.update_turn(position, response=new_text)
     return jsonify({'status': 'updated'})
 
-@app.route('/api/chat/<int:user_id>/message/<int:position>', methods=['DELETE'])
-def delete_message(user_id, position):
-    helper.delete_turn(user_id, position)
+@app.route('/api/chat/message/<int:position>', methods=['DELETE'])
+def delete_message(position):
+    helper.delete_turn(position)
     return jsonify({'status': 'deleted'})
-
-@app.route('/api/users', methods=['POST'])
-def create_user():
-    import uuid
-    data = request.json or {}
-    user_id = data.get('user_id') or str(uuid.uuid4().int >> 64)
-    return jsonify({'user_id': user_id})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

@@ -27,9 +27,7 @@ class DB:
             );
             """)
 
-        self.crs.execute(
-            f"CREATE INDEX IF NOT EXISTS idx_chat_pos ON {DB_NAME}(chat_id, message_position);"
-        )
+        self.crs.execute(f"CREATE INDEX IF NOT EXISTS idx_msg_pos ON {DB_NAME}(message_position);")
 
         self.crs.execute(f"""
             CREATE TABLE IF NOT EXISTS {STATS_DB} (
