@@ -23,8 +23,8 @@ def js():
     return send_from_directory('.', 'script.js', mimetype='application/javascript')
 
 def get_client():
-    api_key = os.getenv('QWEN_API_KEY')
-    base_url = os.getenv('QWEN_API_URL', 'https://api.scitely.com/v1')
+    api_key = os.getenv('API_KEY')
+    base_url = os.getenv('API_URL')
     return OpenAI(api_key=api_key, base_url=base_url)
 
 @app.route('/api/chat', methods=['POST'])
@@ -41,14 +41,14 @@ def chat():
 
     start_time = time.time()
 
-    if not os.getenv('QWEN_API_KEY'):
+    if not os.getenv('API_KEY'):
 
         bot_reply = "API key is not accessible"
     else:
         try:
             client = get_client()
             response = client.chat.completions.create(
-                model="qwen3-32b",
+                model="marco-o1",
                 messages=messages,
                 temperature=0.2,
                 max_tokens=500
